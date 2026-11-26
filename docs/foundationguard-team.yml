@@ -1,0 +1,45 @@
+# FoundationGuard on GitHub (fg/remote.py). Copy to .github/workflows/foundationguard.yml. AI-made (Claude), 16 Nov.
+# Only main's copy of the kit runs: pull_request_target checks out main, and the change's commits are fetched and read as
+# data (git cat-file), never checked out or run. The key for the kit's own GitHub app sits in the "fg-kit" environment,
+# which only main may use, so a workflow on a change's branch can neither reach it nor post the kit's check (spike S3, S7,
+# S10). The ruleset on main requires the check "FoundationGuard note" from that app (python fg/lock.py --steps).
+name: FoundationGuard
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+concurrency:
+  group: foundationguard-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: false
+jobs:
+  note:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: fg-kit
+    steps:
+      - id: app
+        if: ${{ vars.FG_APP_ID != '' }}
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.FG_APP_ID }}
+          private-key: ${{ secrets.FG_APP_KEY }}
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+      - name: The kit's count, from main's copy
+        env:
+          FG_APP_TOKEN: ${{ steps.app.outputs.token }}
+          FG_APP_ID: ${{ vars.FG_APP_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          FG_OPINION_KEY: ${{ secrets.FG_OPINION_KEY }}
+          FG_OPINION_URL: ${{ vars.FG_OPINION_URL }}
+          FG_OPINION_MODEL: ${{ vars.FG_OPINION_MODEL }}
+        run: |
+          if [ -n "$PR" ]; then python3 fg/remote.py pr "$PR"; else python3 fg/remote.py main-moved; fi

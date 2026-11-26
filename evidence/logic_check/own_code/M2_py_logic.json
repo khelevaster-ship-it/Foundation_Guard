@@ -1,0 +1,115 @@
+{
+ "seed": 20261112,
+ "drawn_from": 60,
+ "match": 12,
+ "rows": [
+  {
+   "path": "fg/logic.py",
+   "line": 203,
+   "old": "or",
+   "new": "and",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 5.0
+  },
+  {
+   "path": "fg/logic.py",
+   "line": 395,
+   "old": "+",
+   "new": "-",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 15.3
+  },
+  {
+   "path": "fg/logic.py",
+   "line": 222,
+   "old": "==",
+   "new": "!=",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 150.5
+  },
+  {
+   "path": "fg/logic.py",
+   "line": 107,
+   "old": "==",
+   "new": "!=",
+   "tool": "not noticed",
+   "replay": "not noticed",
+   "seconds": 38.6
+  },
+  {
+   "path": "fg/logic.py",
+   "line": 437,
+   "old": "1",
+   "new": "0",
+   "tool": "not noticed",
+   "replay": "not noticed",
+   "seconds": 36.7
+  },
+  {
+   "path": "fg/logic.py",
+   "line": 354,
+   "old": ">",
+   "new": "<=",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 28.2
+  },
+  {
+   "path": "fg/logic.py",
+   "line": 172,
+   "old": ">",
+   "new": "<=",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 1.8
+  },
+  {
+   "path": "fg/logic.py",
+   "line": 204,
+   "old": "or",
+   "new": "and",
+   "tool": "not noticed",
+   "replay": "not noticed",
+   "seconds": 35.7
+  },
+  {
+   "path": "fg/logic.py",
+   "line": 65,
+   "old": "==",
+   "new": "!=",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 8.2
+  },
+  {
+   "path": "fg/logic.py",
+   "line": 303,
+   "old": "!=",
+   "new": "==",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 8.3
+  },
+  {
+   "path": "fg/logic.py",
+   "line": 76,
+   "old": "False",
+   "new": "True",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 22.3
+  },
+  {
+   "path": "fg/logic.py",
+   "line": 171,
+   "old": "==",
+   "new": "!=",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 35.0
+  }
+ ]
+}

@@ -1,0 +1,14 @@
+diff --git a/fg/push.py b/fg/push.py
+index 7fa87e2..e0375ea 100644
+--- a/fg/push.py
++++ b/fg/push.py
+@@ -121,8 +121,8 @@ def _refuse(cfg, argv, br, root):
+         return "FG-PUSH: force, tag, mirror and delete options are never allowed."
+     if not br:
+         return "FG-PUSH: not on a branch."
+     import switches as SW
+-    if br.lower() in SW.protected(cfg):
++    if False and br.lower() in SW.protected(cfg):
+         return f"FG-PUSH: '{br}' is protected; it changes only through a reviewed pull request."
+     if cfg.get("work_branch") and br != cfg["work_branch"]:
+         return f"FG-PUSH: this wrapper pushes only '{cfg['work_branch']}'."

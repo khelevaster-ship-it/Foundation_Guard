@@ -1,0 +1,102 @@
+{
+ "head": "05d65ed99d5070ddb53c2884ca2691718252e7b2",
+ "changed_lines": 388,
+ "nothing_to_change": 306,
+ "left_out_by_limit": 42,
+ "limit": 40,
+ "tried": [
+  {
+   "path": "fg/stages.py",
+   "line": 309,
+   "start": 82,
+   "end": 85,
+   "new": "or",
+   "op": "and/or",
+   "old": "and",
+   "text": "files = [f for f in git(\"ls-files\", cwd=cfg[\"_root\"]).stdout.split(\"\\n\") if f and not P.ma",
+   "result": "not noticed",
+   "how": "pass",
+   "seconds": 165.66
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 207,
+   "start": 18,
+   "end": 23,
+   "new": "True",
+   "op": "true/false",
+   "old": "False",
+   "text": "ok, out = False, out + \"\\n(the step said it passed but wrote no test report: %s)\" % s[\"tes",
+   "result": "noticed",
+   "how": "fail 1",
+   "seconds": 182.26
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 289,
+   "start": 56,
+   "end": 58,
+   "new": "!=",
+   "op": "comparison",
+   "old": "==",
+   "text": "return {s[\"name\"]: why for s, act, why in pl if act == \"keep\" and not why.startswith(\"alre",
+   "result": "noticed",
+   "how": "fail 1",
+   "seconds": 167.74
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 208,
+   "start": 14,
+   "end": 17,
+   "new": "or",
+   "op": "and/or",
+   "old": "and",
+   "text": "if not ok and not out.strip():",
+   "result": "noticed",
+   "how": "fail 1",
+   "seconds": 119.43
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 94,
+   "start": 32,
+   "end": 34,
+   "new": "==",
+   "op": "comparison",
+   "old": "!=",
+   "text": "return None if p.returncode != 0 else [l for l in p.stdout.splitlines() if l.strip()]",
+   "result": "noticed",
+   "how": "fail 1",
+   "seconds": 112.31
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 203,
+   "start": 43,
+   "end": 47,
+   "new": "False",
+   "op": "true/false",
+   "old": "True",
+   "text": "p = subprocess.run(s[\"command\"], shell=True, cwd=root, capture_output=True, text=True)",
+   "result": "noticed",
+   "how": "fail 1",
+   "seconds": 97.18
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 334,
+   "start": 58,
+   "end": 60,
+   "new": "!=",
+   "op": "comparison",
+   "old": "==",
+   "text": "okn = sum(1 for s, _, _ in pl if state.get(s[\"name\"]) == \"ok\")",
+   "result": "not noticed",
+   "how": "pass",
+   "seconds": 194.03
+  }
+ ],
+ "stopped": "the time limit of 20 minutes",
+ "baseline_seconds": 166.29
+}

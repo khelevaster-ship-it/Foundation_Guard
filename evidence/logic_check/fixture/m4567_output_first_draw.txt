@@ -1,0 +1,9 @@
+start 11:38:30 UTC
+M4a_normal_run_leaves_the_project_alone: PASS (31 files, .git included; 9 changes tried)
+M4b_killed_half_way_leaves_the_project_alone: PASS (the run was still going when it was killed: True)
+M4c_hanging_changes_leave_the_project_alone: PASS 
+M5_hang_stopped_counted_noticed_run_goes_on: PASS (2 hanging changes, each stopped after 3.01, 3.01 s; 4 changes tried in all)
+M6_same_commit_same_report: PASS (21 1 noticed; 20 != noticed; 11 + noticed; 19 0 not noticed)
+M7_limit_holds_and_left_out_lines_are_counted: PASS (limit 4: 4 changes on 4 lines; 2 lines left out; 17 with nothing to change; 23 lines in all)
+copies left in the temporary folder (the killed run's own copy is expected; running jobs have theirs): 5
+end 11:39:09 UTC

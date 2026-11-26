@@ -1,0 +1,45 @@
+{
+ "one command": {
+  "gate runs": 4,
+  "step runs": 18,
+  "seconds": 18.7
+ },
+ "steps": {
+  "gate runs": 2,
+  "step runs": 6,
+  "seconds": 6.4
+ },
+ "nightly whole run afterwards": {
+  "step runs": 6,
+  "seconds": 6.3
+ }
+}
+--- first step-by-step report ---
+GATE 3 of 6 steps passed (3 run now, 3 kept from an earlier pass)
+  PASS     build: kept (passed on 4cd58f9d1c; nothing it guards changed since)
+  MISS     saves: ran, 1.0 s (a file it guards changed (src/saves/x.txt))
+  PASS     world: kept (passed on 4cd58f9d1c; nothing it guards changed since)
+  MISS     people: ran, 1.0 s (a file it guards changed (src/people/x.txt))
+  PASS     weather: kept (passed on 4cd58f9d1c; nothing it guards changed since)
+  MISS     sound: ran, 1.0 s (a file it guards changed (src/sound/x.txt))
+the gate missed 3 of 6 steps: saves, people, sound.
+No step was skipped because of them, so they can be fixed together; the next run repeats only these and whatever the fix touches.
+--- saves ---
+(the step printed nothing; it ended with exit code 1)
+--- people ---
+(the step printed nothing; it ended with exit code 1)
+--- sound ---
+(the step printed nothing; it ended with exit code 1)
+--- second ---
+GATE 6 of 6 steps passed (3 run now, 3 kept from an earlier pass)
+  PASS     build: kept (passed on 4cd58f9d1c; nothing it guards changed since)
+  PASS     saves: ran, 1.0 s (it missed last time)
+  PASS     world: kept (passed on 4cd58f9d1c; nothing it guards changed since)
+  PASS     people: ran, 1.0 s (it missed last time)
+  PASS     weather: kept (passed on 4cd58f9d1c; nothing it guards changed since)
+  PASS     sound: ran, 1.0 s (it missed last time)
+APPROVED 0 of 0 approved behaviours checked
+ASSETS: not set up (no ASSETS.md).
+TINY skipped (no structure settings)
+SECRETS none found in the added lines
+DOCS no ARCHITECTURE.md yet (run  python fg/docs.py --starter  to write starter docs)

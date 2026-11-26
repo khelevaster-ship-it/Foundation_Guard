@@ -1,0 +1,3 @@
+LOGIC could not run: the tests fail before any change is made, so they can show nothing. Fix them first.
+
+refusal exit 1

@@ -1,0 +1,5 @@
+LOGIC 7 small changes tried on 7 of 388 changed lines (limit 40): 5 noticed by a test, 2 not noticed.
+  Not tried: 381 lines (306 have nothing this check can change; 75 left out by the limit; stopped at the time limit of 20 minutes).
+  NOT NOTICED  fg/stages.py:309  and/or  'and' -> 'or'   | files = [f for f in git("ls-files", cwd=cfg["_root"]).stdout.split("\n") if f and not P.ma
+  NOT NOTICED  fg/stages.py:334  comparison  '==' -> '!='   | okn = sum(1 for s, _, _ in pl if state.get(s["name"]) == "ok")
+A line listed here can be wrong in the way shown and every test still passes. Add a test that fails with the change, or note why the change cannot matter.

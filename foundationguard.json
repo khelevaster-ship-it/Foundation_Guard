@@ -1,0 +1,6 @@
+{
+  "gate_command": "python3 -m pytest -q -p no:cacheprovider tests/ --junitxml=.foundationguard/junit.xml",
+  "test_log": ".foundationguard/junit.xml",
+  "check_command": "python3 -m pytest -q -p no:cacheprovider tests/ -k {check}",
+  "protected_branches": ["main", "master"]
+}

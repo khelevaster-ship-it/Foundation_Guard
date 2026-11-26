@@ -1,0 +1,8 @@
+{
+  "name": "star-herder",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "vitest run && playwright test" },
+  "dependencies": { "phaser": "^3.80.1" },
+  "devDependencies": { "@playwright/test": "1.63.0", "vitest": "*" }
+}

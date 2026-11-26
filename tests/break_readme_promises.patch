@@ -1,0 +1,24 @@
+diff --git a/README.md b/README.md
+index 5b4e121..4867ff6 100644
+--- a/README.md
++++ b/README.md
+@@ -6,10 +6,6 @@
+ 
+ <p align="center"><a href="#install">Install</a> · <a href="#what-it-stops">What it stops</a> · <a href="#proof">Proof</a> · <a href="#limits">Limits</a> · <a href="docs/GUIDE.md">Guide</a></p>
+ 
+-> [!IMPORTANT]
+-> **Switch on GitHub branch protection**, with a required check, on every branch that matters. On your own computer
+-> the kit is a safety net and an alarm, not a lock: [docs/GITHUB_PROTECTION.md](docs/GITHUB_PROTECTION.md).
+-
+ > [!NOTE]
+ > **Beta, and AI-made.** Claude models wrote all of the kit's code and tests and judged the results. No human
+ > programmer has reviewed it yet.
+@@ -104,7 +100,7 @@ Godot games, and browser games and web apps (JavaScript or TypeScript), by itsel
+ <details>
+ <summary>Each of these in full, with what it can and cannot read</summary>
+ 
+-- **Lost work:** force pushes in the spellings the kit can read (listed in the guide), pushes straight to main,
++- **Lost work:** force pushes in every spelling, pushes straight to main,
+   deleted branches and tags, `reset --hard`, `clean -f`, history rewrites, including when they are hidden inside
+   `bash -c`, `eval`, a variable set on the same line, a function, PowerShell's `Invoke-Expression`, or chains. It
+   reads the command's words: a program built to get round it can (see "What it is not").

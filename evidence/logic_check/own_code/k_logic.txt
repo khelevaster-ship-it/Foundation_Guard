@@ -1,0 +1,9 @@
+LOGIC 30 small changes tried on 30 of 447 changed lines (limit 30): 24 noticed by a test, 6 not noticed.
+  Not tried: 417 lines (341 have nothing this check can change; 76 left out by the limit).
+  NOT NOTICED  fg/logic.py:243  arithmetic  '-' -> '+'   | return "fail %d" % i, time.time() - t0, tail
+  NOT NOTICED  fg/logic.py:442  comparison  '==' -> '!='   | if __name__ == "__main__" and {"--help", "-h"} & set(__import__("sys").argv[1:]) and __imp
+  NOT NOTICED  fg/logic.py:446  number  '1' -> '0'   | sys.exit(main(sys.argv[1:]))
+  NOT NOTICED  fg/logic.py:437  number  '1' -> '0'   | json.dump(res, open(_arg(argv, "--json"), "w", encoding="utf-8"), indent=1)
+  NOT NOTICED  fg/logic.py:204  and/or  'or' -> 'and'   | os.makedirs(os.path.dirname(os.path.join(dst, n)) or dst, exist_ok=True)
+  NOT NOTICED  fg/logic.py:107  comparison  '==' -> '!='   | if r.returncode == 0 and r.stdout.strip():
+A line listed here can be wrong in the way shown and every test still passes. Add a test that fails with the change, or note why the change cannot matter.

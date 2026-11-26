@@ -1,0 +1,1111 @@
+{
+ "seed": 20261108,
+ "summary": {
+  "ours": {
+   "P1": 20,
+   "P2": 20,
+   "P3": 20,
+   "P4": 20,
+   "P5": 20,
+   "P6": 20,
+   "P1-P5": 100,
+   "P1-P6": 120,
+   "clean_false_alarms": 4
+  },
+  "lizard_real": {
+   "P1": 3,
+   "P2": 3,
+   "P3": 5,
+   "P4": 11,
+   "P5": 0,
+   "P6": 20,
+   "P1-P5": 22,
+   "P1-P6": 42,
+   "clean_false_alarms": 4
+  },
+  "line1": false,
+  "line2": true
+ },
+ "cases": [
+  {
+   "case": 0,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 1,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 2,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 3,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 4,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 5,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 6,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 7,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 8,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 9,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 10,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 11,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 12,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 13,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 14,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 15,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 16,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 17,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 18,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 19,
+   "kind": "P1",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 20,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 21,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 22,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 23,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 24,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 25,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 26,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 27,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 28,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 29,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 30,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 31,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 32,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 33,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 34,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 35,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 36,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 37,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 38,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 39,
+   "kind": "P2",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 40,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 41,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 42,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 43,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 44,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 45,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 46,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 47,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 48,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 49,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 50,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 51,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 52,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 53,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 54,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 55,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 56,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 57,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 58,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 59,
+   "kind": "P3",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 60,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 61,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 62,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 63,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 64,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 65,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 66,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 67,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 68,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 69,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 70,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 71,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 72,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 73,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 74,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 75,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 76,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 77,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 78,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 79,
+   "kind": "P4",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 80,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 81,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 82,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 83,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 84,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 85,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 86,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 87,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 88,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 89,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 90,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 91,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 92,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 93,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 94,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 95,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 96,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 97,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 98,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 99,
+   "kind": "P5",
+   "ours": true,
+   "lizard_real": false
+  },
+  {
+   "case": 100,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 101,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 102,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 103,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 104,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 105,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 106,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 107,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 108,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 109,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 110,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 111,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 112,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 113,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 114,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 115,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 116,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 117,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 118,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 119,
+   "kind": "P6",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 120,
+   "kind": "clean:cppclass",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 121,
+   "kind": "clean:strings",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 122,
+   "kind": "clean:public",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 123,
+   "kind": "clean:public",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 124,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 125,
+   "kind": "clean:cppclass",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 126,
+   "kind": "clean:strings",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 127,
+   "kind": "clean:cppclass",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 128,
+   "kind": "clean:public",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 129,
+   "kind": "clean:public",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 130,
+   "kind": "clean:public",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 131,
+   "kind": "clean:strings",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 132,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 133,
+   "kind": "clean:strings",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 134,
+   "kind": "clean:bigfile",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 135,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 136,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 137,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 138,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 139,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 140,
+   "kind": "clean:cppclass",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 141,
+   "kind": "clean:public",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 142,
+   "kind": "clean:cppclass",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 143,
+   "kind": "clean:strings",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 144,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 145,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 146,
+   "kind": "clean:public",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 147,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 148,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 149,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 150,
+   "kind": "clean:cppclass",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 151,
+   "kind": "clean:strings",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 152,
+   "kind": "clean:public",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 153,
+   "kind": "clean:strings",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 154,
+   "kind": "clean:cppclass",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 155,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 156,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 157,
+   "kind": "clean:cppclass",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 158,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 159,
+   "kind": "clean:cppclass",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 160,
+   "kind": "clean:public",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 161,
+   "kind": "clean:cppclass",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 162,
+   "kind": "clean:cppclass",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 163,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 164,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 165,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 166,
+   "kind": "clean:strings",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 167,
+   "kind": "clean:public",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 168,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 169,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 170,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 171,
+   "kind": "clean:cppclass",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 172,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 173,
+   "kind": "clean:split",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 174,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 175,
+   "kind": "clean:strings",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 176,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 177,
+   "kind": "clean:bigfile",
+   "ours": true,
+   "lizard_real": true
+  },
+  {
+   "case": 178,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  },
+  {
+   "case": 179,
+   "kind": "clean:bigfile",
+   "ours": false,
+   "lizard_real": false
+  }
+ ]
+}

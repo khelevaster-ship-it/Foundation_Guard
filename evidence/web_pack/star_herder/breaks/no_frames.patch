@@ -1,0 +1,13 @@
+diff --git a/src/main.js b/src/main.js
+index 0059aa9..3580959 100644
+--- a/src/main.js
++++ b/src/main.js
+@@ -8,7 +8,7 @@ function frame() {
+   ctx.fillStyle = "#ff0";
+   for (const s of herd) ctx.fillRect(s.x, s.y, 2, 2);
+   frames++;
+-  window.__frames = frames;
++  window.__frames = 0;
+   requestAnimationFrame(frame);
+ }
+ frame();

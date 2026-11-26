@@ -1,0 +1,63 @@
+{
+  "_about": "FoundationGuard v0.8.5: the gate as steps. Copy 'gate_steps' and 'whole_run_days' into your foundationguard.json and change the names, commands and folders. With gate_steps set, gate_command is not used.",
+  "protected_branches": [
+    "main"
+  ],
+  "check_command": "python -m pytest -q -k {check}",
+  "whole_run_days": 1.5,
+  "gate_steps": [
+    {
+      "name": "build",
+      "command": "python tools/build.py",
+      "guards": [
+        "src/**",
+        "tools/build.py"
+      ]
+    },
+    {
+      "name": "saves",
+      "command": "python -m pytest -q tests/saves --junitxml=.foundationguard/saves.xml",
+      "guards": [
+        "src/save/**",
+        "tests/saves/**"
+      ],
+      "needs": [
+        "build"
+      ],
+      "test_log": ".foundationguard/saves.xml"
+    },
+    {
+      "name": "world",
+      "command": "python -m pytest -q tests/world --junitxml=.foundationguard/world.xml",
+      "guards": [
+        "src/world/**",
+        "src/common/**",
+        "tests/world/**"
+      ],
+      "needs": [
+        "build"
+      ],
+      "test_log": ".foundationguard/world.xml"
+    },
+    {
+      "name": "old-saves",
+      "command": "python tools/load_every_old_save.py",
+      "guards": [
+        "src/save/**",
+        "tests/old_saves/**"
+      ],
+      "always": true,
+      "needs": [
+        "build"
+      ]
+    },
+    {
+      "name": "docs",
+      "command": "python fg/docs.py",
+      "guards": [
+        "**/*.md",
+        "docs/**"
+      ]
+    }
+  ]
+}

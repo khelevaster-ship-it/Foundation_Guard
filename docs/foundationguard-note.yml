@@ -1,0 +1,21 @@
+# FoundationGuard: the merge note must be the script's own output (F018). Copy to .github/workflows/. AI-made (Claude).
+name: FoundationGuard note
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+jobs:
+  note:
+    name: FoundationGuard note
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Save the pull request description
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$BODY" > "$RUNNER_TEMP/pr.md"
+      - name: Check the note against the real file changes
+        run: |
+          git checkout -q "${{ github.event.pull_request.head.sha }}"
+          python3 fg/summary.py --check "$RUNNER_TEMP/pr.md" "origin/${{ github.event.pull_request.base.ref }}"

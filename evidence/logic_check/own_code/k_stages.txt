@@ -1,0 +1,12 @@
+LOGIC 30 small changes tried on 30 of 388 changed lines (limit 30): 21 noticed by a test, 9 not noticed.
+  Not tried: 358 lines (306 have nothing this check can change; 52 left out by the limit).
+  NOT NOTICED  fg/stages.py:199  and/or  'or' -> 'and'   | os.makedirs(os.path.dirname(log) or root, exist_ok=True)
+  NOT NOTICED  fg/stages.py:334  comparison  '==' -> '!='   | okn = sum(1 for s, _, _ in pl if state.get(s["name"]) == "ok")
+  NOT NOTICED  fg/stages.py:333  comparison  '==' -> '!='   | kept = sum(1 for s, act, _ in pl if act == "keep" and state.get(s["name"]) == "ok")
+  NOT NOTICED  fg/stages.py:380  number  '0' -> '1'   | return 0
+  NOT NOTICED  fg/stages.py:348  true/false  'False' -> 'True'   | def run(cfg, setup_changed=False, whole=False):
+  NOT NOTICED  fg/stages.py:387  number  '1' -> '0'   | sys.exit(main(sys.argv[1:]))
+  NOT NOTICED  fg/stages.py:316  comparison  '>' -> '<='   | % (len(loose), ", ".join(loose[:5]) + (" and more" if len(loose) > 5 else "")))
+  NOT NOTICED  fg/stages.py:210  number  '1' -> '0'   | return ok, round(time.time() - t0, 1), out, (A.results(log) if log else {})
+  NOT NOTICED  fg/stages.py:262  and/or  'and' -> 'or'   | got[k] = got.get(k, True) and v
+A line listed here can be wrong in the way shown and every test still passes. Add a test that fails with the change, or note why the change cannot matter.

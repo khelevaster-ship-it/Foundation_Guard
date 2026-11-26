@@ -1,0 +1,169 @@
+{
+ "seed": 20261112,
+ "drawn_from": 60,
+ "match": 18,
+ "rows": [
+  {
+   "path": "fg/stages.py",
+   "line": 316,
+   "old": ">",
+   "new": "<=",
+   "tool": "not noticed",
+   "replay": "not noticed",
+   "seconds": 41.7
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 50,
+   "old": "or",
+   "new": "and",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 6.4
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 387,
+   "old": "1",
+   "new": "0",
+   "tool": "not noticed",
+   "replay": "not noticed",
+   "seconds": 37.7
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 334,
+   "old": "==",
+   "new": "!=",
+   "tool": "not noticed",
+   "replay": "not noticed",
+   "seconds": 39.5
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 288,
+   "old": "False",
+   "new": "True",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 24.0
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 191,
+   "old": "+",
+   "new": "-",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 7.1
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 295,
+   "old": "!=",
+   "new": "==",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 5.4
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 348,
+   "old": "False",
+   "new": "True",
+   "tool": "not noticed",
+   "replay": "not noticed",
+   "seconds": 36.8
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 37,
+   "old": "True",
+   "new": "False",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 6.5
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 57,
+   "old": "or",
+   "new": "and",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 8.7
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 365,
+   "old": "+",
+   "new": "-",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 4.6
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 45,
+   "old": "==",
+   "new": "!=",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 5.1
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 289,
+   "old": "==",
+   "new": "!=",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 20.2
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 199,
+   "old": "or",
+   "new": "and",
+   "tool": "not noticed",
+   "replay": "not noticed",
+   "seconds": 18.7
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 52,
+   "old": "!=",
+   "new": "==",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 3.8
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 140,
+   "old": "not ",
+   "new": "",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 5.3
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 310,
+   "old": "or",
+   "new": "and",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 18.5
+  },
+  {
+   "path": "fg/stages.py",
+   "line": 386,
+   "old": "==",
+   "new": "!=",
+   "tool": "noticed",
+   "replay": "noticed",
+   "seconds": 3.9
+  }
+ ]
+}

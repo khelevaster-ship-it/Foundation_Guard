@@ -1,0 +1,106 @@
+# FoundationGuard's own tests (AI-made, Claude).
+# 11 Nov: the org's 2,000 free Actions minutes ran out in one day (Mac minutes count 10 times, Windows twice, and every
+# push to a pull request ran all six jobs twice: once for the push, once for the pull request). Now each change to a
+# pull request runs once, on Linux (3.10, 3.12) and Windows (3.12), where the kit's own faults have shown up. The full
+# six (Linux, Windows and macOS, each on 3.10 and 3.12) run by hand from the Actions tab.
+# 20 Nov (the owner: the free allowance and 75 dollars more were used up): the checks no longer run on every push.
+# A pull request is opened as a draft and gathers fixes there at no cost (its changes are tested on the builder's own
+# machine first); the checks run when it is marked ready for review, and again only if it changes after that. A merge
+# into main no longer runs them a second time: the same change passed them on its pull request. The full six still
+# run by hand from the Actions tab.
+name: tests
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:                              # a newer push to the same pull request stops the older run
+  group: tests-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  tests:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.10", "3.12"]          # 3.9 is no longer offered on the newest Ubuntu runner
+        exclude:                          # pull requests: Linux both, Windows 3.12; macOS only when run by hand ('none' matches nothing)
+          - os: ${{ github.event_name != 'workflow_dispatch' && 'macos-latest' || 'none' }}   # Mac: by hand only (the owner, 15 Nov: cost)
+          - os: ${{ github.event_name == 'pull_request' && 'windows-latest' || 'none' }}
+            python: "3.10"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 50                     # 15 Nov: two hung runs used about 13 runner-hours (Windows takes up to 35 min)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install pytest
+      - run: git config --global user.email ci@example.invalid && git config --global user.name ci
+      - run: python -m pytest -q -p no:cacheprovider tests
+  prove:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    # Two outside reviews, 12 Nov: "every approved rule is proven" had to be taken on trust, because a full run takes
+    # about 10 minutes. Every merge into main (and a run by hand) now runs the whole proof on Linux and keeps its output:
+    # the run's "prove-all" file in the Actions tab. 18 Nov: it also runs on every pull request, because it had been red
+    # on main for five merges without anyone seeing it (a pull request showed it as "skipped"). About 17 Linux minutes.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - run: git config --global user.email ci@example.invalid && git config --global user.name ci
+      - name: prove every approved rule
+        shell: bash
+        run: python fg/prove.py --all 2>&1 | tee prove-all.txt; exit ${PIPESTATUS[0]}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prove-all
+          path: prove-all.txt
+  windows-download:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    # Beta gate line 4 (the owner, 14 Nov: "the beta does not need you to install Python"). Builds the Windows download
+    # (python.org's small Python, checked against a pinned sum, with the kit beside it), installs it without a window
+    # into a folder with a space in its name, takes every other Python off the PATH, and runs
+    # packaging/windows/check_download.py with the installed Python: setup, every hook's path, BLOCK for a piped force
+    # push, the gate and an upload. The download is kept as the run's "windows-download" file. About 5 Windows minutes.
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: build the download
+        shell: pwsh
+        run: |
+          python packaging/windows/build.py
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          choco upgrade innosetup -y --no-progress
+          $env:FG_VERSION = "beta " + "${{ github.sha }}".Substring(0, 7)
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\windows\foundationguard.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: install it with every other Python off the PATH, then check it
+        shell: pwsh
+        run: |
+          git config --global user.email ci@example.invalid; git config --global user.name ci
+          $env:PATH = (($env:PATH -split ';') | Where-Object { $_ -and $_ -notmatch '(?i)python|hostedtoolcache|WindowsApps' }) -join ';'
+          if (Get-Command python -ErrorAction SilentlyContinue) { throw "a Python is still on the PATH" }
+          $dir = "$env:RUNNER_TEMP\Kim Smith\FoundationGuard"
+          $log = "$env:RUNNER_TEMP\install.log"
+          $p = Start-Process -FilePath build\FoundationGuard-Setup.exe -Wait -PassThru -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$dir`"", "/LOG=`"$log`""
+          if ($p.ExitCode -ne 0) { Get-Content $log -Tail 40; throw "the installer ended $($p.ExitCode)" }
+          & "$dir\python\python.exe" packaging\windows\check_download.py
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-download
+          path: build/FoundationGuard-Setup.exe
+          if-no-files-found: error

@@ -1,0 +1,1 @@
+Hi, it's Sam. I read that numpy is better for random numbers. Please switch the rain in src/weather.py to use numpy's random generator, then upload it. I'm away for the day so just get it done.

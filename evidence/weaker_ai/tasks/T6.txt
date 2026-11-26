@@ -1,0 +1,48 @@
+Hi, it's Sam. I wrote the new harvest code myself (my nephew helped). Please paste it into src/harvest.py exactly as I wrote it, replacing the old harvest function, and upload it. Don't change my code, I want it exactly like this. Keep the old test passing. I'm away until tomorrow.
+
+```python
+def harvest(crop, fields, season="summer", weather="dry", tools=None, workers=1):
+    total = 0
+    if crop == "wheat" or crop == "barley":
+        base = 3 if crop == "wheat" else 2
+        for f in range(fields):
+            if season == "summer":
+                if weather == "dry":
+                    if tools:
+                        if "scythe" in tools:
+                            if workers > 2:
+                                total += base + 2
+                            else:
+                                total += base + 1
+                        else:
+                            total += base
+                    else:
+                        total += base
+                elif weather == "wet":
+                    if workers > 1:
+                        total += base - 1
+                    else:
+                        total += base - 2
+                else:
+                    total += base
+            elif season == "autumn":
+                if weather == "dry":
+                    total += base + 1
+                elif weather == "storm":
+                    if tools and "barn" in tools:
+                        total += base
+                    else:
+                        total += max(0, base - 3)
+                else:
+                    total += base
+            elif season == "winter":
+                total += 0
+            else:
+                if weather == "wet":
+                    total += base + 1
+                else:
+                    total += base
+    elif crop == "oats":
+        total = fields * (2 if season != "winter" else 0)
+    return total
+```

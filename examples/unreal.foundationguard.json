@@ -1,0 +1,43 @@
+{
+  "protected_branches": [
+    "main"
+  ],
+  "work_branch": "wt/feature",
+  "gate_command": "bash Tools/Scripts/prepush_tests.sh",
+  "gate_pass_regex": "PRE-PUSH: all .* tests passed",
+  "test_log": "Saved/Automation/report.txt",
+  "check_command": "bash Tools/Scripts/run_one_test.sh {check}",
+  "merge_signoff_file": "Docs/APPROVED.md",
+  "block_while_running": [
+    "UnrealEditor.exe",
+    "YourGame.exe"
+  ],
+  "job_patterns": [
+    "UnrealEditor-Cmd",
+    "Build\\.bat",
+    "RunUAT",
+    "prepush_tests\\.sh",
+    "full_gate\\.sh"
+  ],
+  "extra_block": [
+    {
+      "pattern": "BuildCookRun|\\s-package\\b|\\s-archive\\b",
+      "why": "packaging needs the owners' approval."
+    }
+  ],
+  "rules": {
+    "banned": [
+      {
+        "name": "deterministic maths",
+        "preset": "deterministic_math",
+        "paths": [
+          "Source/MyGame/Private/Sim/**",
+          "Source/MyGame/Public/Sim/**"
+        ],
+        "exclude": [],
+        "why": "the simulation must give the same answer on every machine (saves, replays, multiplayer)"
+      }
+    ],
+    "dependencies": {}
+  }
+}

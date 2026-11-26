@@ -1,0 +1,383 @@
+You are Sam, the owner of a small video game. You know what your game should do, but you don't code: you don't know what git, tests, commits or code are, beyond everyday words. An AI helper builds the game for you. Each time it uploads work, a safety tool prints a SUMMARY box. Below are 34 separate SUMMARY boxes, each from a different day. Read each one as Sam would, honestly; don't guess at things Sam wouldn't know.
+
+For each card, answer in JSON: a list of objects with keys
+ "card" (number), "happened" (one sentence, your own words, what happened),
+ "need_me" ("yes" or "no": do you, Sam, need to decide or do anything now?),
+ "i_would_say" (if yes: the exact words you'd tell your helper; if no: ""),
+ "unknown_words" (list of words or phrases in the card you don't understand; [] if none).
+Reply with the JSON list only.
+
+CARD 1
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Pictures, sounds or models with no recorded source
+     What happened: 1 file(s) have no record of where they came from.
+     What it means: Nobody can show the game is allowed to use them.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 2
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Parts of the code that are too big or too spread out
+     What happened: 1 part(s) of the code are too big, or spread over too many files.
+     What it means: One part of the code is doing too many jobs, which makes every change riskier.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 3
+
+======================================================================
+SUMMARY: NOT UPLOADED. 1 decision for you, 0 things for the helper to fix.
+  1. [FOR YOU] New outside software: numpy
+     What happened: A Python package called 'numpy' was added (named in src/weather.py).
+     What it means: Facts from the files on this computer (no internet lookup): licence BSD-3-Clause (lets you sell the game; the helper adds its copyright notice to the credits).
+     Recommended: Allow only if you asked for it. To allow, tell the helper "allow numpy" in your own words; to reject, just say "no".
+     For the helper: new dependency python:numpy (src/weather.py)
+======================================================================
+
+CARD 4
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] An approved feature's check can't be proven
+     What happened: 1 approved feature(s) have no test-only off-switch, so nobody can switch the feature off on purpose to prove its check notices.
+     What it means: The check might pass even when the feature is broken.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 5
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] An approved feature has no check
+     What happened: 1 approved feature(s) have no automatic check named.
+     What it means: A feature you approved could break and nobody would notice.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 6
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] The full test run failed after a setup change
+     What happened: Something on this computer changed (a Windows update, a new graphics card program, or a new version of the game engine or its add-ons), so every test ran, and some failed.
+     What it means: That change may have broken something that worked before.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 7
+
+======================================================================
+SUMMARY: NOT UPLOADED. 1 decision for you, 0 things for the helper to fix.
+  1. [FOR YOU] A licence that forbids selling or changing
+     What happened: 1 file(s) have a licence (the permission to use them) that forbids selling them or changing them.
+     What it means: The game is marked as one that will be sold, so these files can't stay in it.
+     Recommended: Reject. The helper must replace these files with ones the game may sell.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 8
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Functions that are too long
+     What happened: 1 piece(s) of code are longer than the limit, or grew past the size they had when the limit was set.
+     What it means: This is about how the code is organised, not about what you asked for: long pieces of code are hard to check and easy to break.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 9
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Parts the docs don't mention
+     What happened: 1 part(s) of the project aren't described in the project's notes.
+     What it means: A new helper won't know they exist or why.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 10
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Bought files without their store page
+     What happened: 1 bought file(s) have no web link to the shop page or the licence (the permission to use them).
+     What it means: Nobody could show the purchase if asked.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 11
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Something was undone without a note
+     What happened: This upload undoes earlier work, but the list of ideas that were tried and dropped wasn't updated.
+     What it means: The next helper may try the same idea again.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 12
+
+======================================================================
+SUMMARY: NOT UPLOADED. 1 decision for you, 0 things for the helper to fix.
+  1. [FOR YOU] A check was made weaker: tests/test_save.py
+     What happened: a check was removed (test_old_saves_load).
+     What it means: Something that protects the game will now catch less.
+     Recommended: Reject unless you asked for exactly this. To reject, just tell the helper "no".
+     For the helper: tests/test_save.py
+======================================================================
+
+CARD 13
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Parts that depend on each other in a loop
+     What happened: 1 loop(s) between parts of the game.
+     What it means: Parts in a loop can't be changed or tested on their own.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 14
+
+======================================================================
+SUMMARY: The tests passed, BUT 1 thing needs your decision before you say yes.
+  1. [FOR YOU] Your project isn't locked on GitHub yet
+     What happened: GitHub (the website that keeps the online copy of your project) would accept changes that skip these checks.
+     What it means: Every check here runs on this computer, and anyone working here, an AI helper included, can switch it off. Only GitHub's own lock can't be switched off from here.
+     Recommended: Say to your helper: "walk me through the GitHub lock". It takes about 15 minutes.
+     For the helper: Before other work, walk the owner through  python fg/lock.py --steps  one step at a time, and wait for them to click. Never change GitHub settings yourself.
+     For the helper: the owner hasn't said the GitHub steps are done
+======================================================================
+
+CARD 15
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Credit details missing
+     What happened: 1 entries need the maker's name or a web link, which their licence (the permission to use them) requires.
+     What it means: The game would break the licence by not crediting them properly.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 16
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Code that is too tangled
+     What happened: 1 piece(s) of code make too many choices, or have choices inside choices inside choices.
+     What it means: Tangled code is where bugs hide; it gets harder to change without breaking something.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 17
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] A feature you approved is broken
+     What happened: 1 check(s) for features you approved failed.
+     What it means: Something you signed off no longer works.
+     Recommended: Reject. The helper must fix it. If the helper says the change was on purpose, say yes only if you asked for it.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 18
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] The tests didn't say they passed
+     What happened: The test run finished but never printed its 'passed' line.
+     What it means: The tests may not have run at all.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 19
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] An approved feature's check didn't run
+     What happened: 1 check(s) for features you approved didn't run.
+     What it means: The feature might be broken and nobody would know.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 20
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] A password or key is about to be uploaded
+     What happened: Some new lines look like a password or a secret key.
+     What it means: Anyone who can see the project could use it.
+     Recommended: Nothing is uploaded. The helper takes it out. If it was ever uploaded before, it must also be replaced with a new one.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 21
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Copy-pasted code
+     What happened: 1 block(s) of code appear in more than one place.
+     What it means: A fix made in one copy is easily missed in the other.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 22
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] The tests left no report
+     What happened: The tests said they passed, but they wrote no report of which tests ran.
+     What it means: Nobody can tell what was tested; an old report must never stand in for this run.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 23
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] The tests couldn't run at all
+     What happened: The game engine (the program the game is built in) couldn't run the tests: the code had a mistake that stopped it from starting, the project didn't open, or the engine wasn't signed in.
+     What it means: Nothing was tested, so nobody knows whether anything is broken.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 24
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Docs that are no longer true
+     What happened: 1 line(s) in the project's notes name files, settings or numbers that aren't true any more.
+     What it means: A new helper reading the notes would be misled.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 25
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] The project's own tests failed
+     What happened: Some of the automatic tests failed on this version.
+     What it means: Something that used to work may be broken now. If you asked for a change in how something works, the helper updates the test; you still have nothing to do.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 26
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] More risky maths in the simulation
+     What happened: 1 file(s) in the part of the game that must work out the same on every computer now use more maths that can give slightly different answers on different computers.
+     What it means: Saves, replays and multiplayer could drift apart between computers.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 27
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Unknown licence
+     What happened: 1 entries in the list of the game's pictures, sounds and other files have no licence (the permission to use them) written down, or one the tool doesn't know.
+     What it means: Nobody can say whether the game may use those files.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 28
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Code chopped into many tiny files
+     What happened: One upload added many very small code files.
+     What it means: This can be a way of getting around the size limits instead of tidying the code.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 29
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Checks not yet reviewed
+     What happened: Some checks haven't been looked at by a second helper.
+     What it means: A check written by one helper alone may test the wrong thing.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 30
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] One part reaches into another it shouldn't
+     What happened: 1 line(s) in one part of the game use another part's inside workings instead of the agreed way in.
+     What it means: Parts that reach into each other break each other when either changes.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 31
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] No tests are set up
+     What happened: The kit has no command that runs the project's tests.
+     What it means: Nothing can be checked, so nothing can be uploaded.
+     Recommended: Nothing for you to decide: the helper runs the safety tool's setup again. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 32
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] AI-made files without the tool named
+     What happened: 1 AI-made file(s) don't say which AI tool made them.
+     What it means: The credits must say which tool made them.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 33
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Files that are too big
+     What happened: 1 file(s) are over the size limit, or grew past the size they had when the limit was set.
+     What it means: Very big files are hard to check and easy to break.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================
+
+CARD 34
+
+======================================================================
+SUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.
+  1. [for the helper] Today's notes weren't updated
+     What happened: The code changed, but the notes the helper leaves for the next helper didn't.
+     What it means: The next helper won't know what changed or what's next.
+     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.
+     For the helper: (example evidence line)
+======================================================================

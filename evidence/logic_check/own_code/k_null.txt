@@ -1,0 +1,63 @@
+LOGIC 60 small changes tried on 60 of 388 changed lines (limit 60): 0 noticed by a test, 60 not noticed.
+  Not tried: 328 lines (306 have nothing this check can change; 22 left out by the limit).
+  NOT NOTICED  fg/stages.py:157  not  'not ' -> ''   | if not prev.get("ok"):
+  NOT NOTICED  fg/stages.py:199  and/or  'or' -> 'and'   | os.makedirs(os.path.dirname(log) or root, exist_ok=True)
+  NOT NOTICED  fg/stages.py:334  comparison  '==' -> '!='   | okn = sum(1 for s, _, _ in pl if state.get(s["name"]) == "ok")
+  NOT NOTICED  fg/stages.py:333  comparison  '==' -> '!='   | kept = sum(1 for s, act, _ in pl if act == "keep" and state.get(s["name"]) == "ok")
+  NOT NOTICED  fg/stages.py:310  and/or  'or' -> 'and'   | loose = [f for f in files if (TEST_NAME.search(f) or TEST_CAMEL.search(f)) and not any(P.m
+  NOT NOTICED  fg/stages.py:380  number  '0' -> '1'   | return 0
+  NOT NOTICED  fg/stages.py:348  true/false  'False' -> 'True'   | def run(cfg, setup_changed=False, whole=False):
+  NOT NOTICED  fg/stages.py:52  comparison  '!=' -> '=='   | if len(names) != len(S) or not all(names) or len(set(names)) != len(names):
+  NOT NOTICED  fg/stages.py:386  comparison  '==' -> '!='   | if __name__ == "__main__":
+  NOT NOTICED  fg/stages.py:140  not  'not ' -> ''   | ch = [f for f in ch if not P.matches(f, lists)]
+  NOT NOTICED  fg/stages.py:45  comparison  '==' -> '!='   | return git("status", "--porcelain", "--untracked-files=no", cwd=root).stdout.strip() == ""
+  NOT NOTICED  fg/stages.py:37  true/false  'True' -> 'False'   | return subprocess.run(["git", *a], cwd=cwd, capture_output=True, text=True)
+  NOT NOTICED  fg/stages.py:387  number  '1' -> '0'   | sys.exit(main(sys.argv[1:]))
+  NOT NOTICED  fg/stages.py:288  true/false  'False' -> 'True'   | pl, _, _ = plan(cfg, head, setup_changed, False)
+  NOT NOTICED  fg/stages.py:362  arithmetic  '+=' -> '-='   | lines += _narrow_lines(cfg, carried, state)
+  NOT NOTICED  fg/stages.py:289  comparison  '==' -> '!='   | return {s["name"]: why for s, act, why in pl if act == "keep" and not why.startswith("alre
+  NOT NOTICED  fg/stages.py:50  and/or  'or' -> 'and'   | S = cfg.get("gate_steps") or []
+  NOT NOTICED  fg/stages.py:203  true/false  'True' -> 'False'   | p = subprocess.run(s["command"], shell=True, cwd=root, capture_output=True, text=True)
+  NOT NOTICED  fg/stages.py:206  and/or  'and' -> 'or'   | if ok and log and not os.path.exists(log) and not BREAK("stages_report"):
+  NOT NOTICED  fg/stages.py:316  comparison  '>' -> '<='   | % (len(loose), ", ".join(loose[:5]) + (" and more" if len(loose) > 5 else "")))
+  NOT NOTICED  fg/stages.py:268  not  'not ' -> ''   | if not miss:
+  NOT NOTICED  fg/stages.py:191  arithmetic  '+' -> '-'   | return [(s,) + _decide(cfg, S, s, res["steps"].get(s["name"]), head, st) for s in S], res,
+  NOT NOTICED  fg/stages.py:57  and/or  'or' -> 'and'   | if [n for n in s.get("needs") or [] if n not in names]:
+  NOT NOTICED  fg/stages.py:210  number  '1' -> '0'   | return ok, round(time.time() - t0, 1), out, (A.results(log) if log else {})
+  NOT NOTICED  fg/stages.py:365  arithmetic  '+' -> '-'   | return problem, head_line + "\n" + "\n".join(lines), _tests(cfg, S, res, state)
+  NOT NOTICED  fg/stages.py:341  comparison  '==' -> '!='   | for n in [n for n in carried if state.get(n) == "miss"]:
+  NOT NOTICED  fg/stages.py:295  comparison  '!=' -> '=='   | if BREAK("stages_tracked") or git("ls-files", "--error-unmatch", os.path.relpath(path(cfg)
+  NOT NOTICED  fg/stages.py:280  true/false  'True' -> 'False'   | return True
+  NOT NOTICED  fg/stages.py:132  and/or  'or' -> 'and'   | return next((f for f in ch if not any(P.matches(f, x.get("guards") or []) for x in S)), No
+  NOT NOTICED  fg/stages.py:262  and/or  'and' -> 'or'   | got[k] = got.get(k, True) and v
+  NOT NOTICED  fg/stages.py:55  not  'not ' -> ''   | if not s.get("command"):
+  NOT NOTICED  fg/stages.py:205  comparison  '==' -> '!='   | ok = p.returncode == 0
+  NOT NOTICED  fg/stages.py:359  arithmetic  '+' -> '-'   | return stop, "GATE stopped: " + stop + "\n" + "\n".join(lines), {}
+  NOT NOTICED  fg/stages.py:383  comparison  '==' -> '!='   | if __name__ == "__main__" and {"--help", "-h"} & set(__import__("sys").argv[1:]) and __imp
+  NOT NOTICED  fg/stages.py:277  comparison  '==' -> '!='   | if all(state.get(s["name"]) == "ok" and res["steps"][s["name"]]["commit"] == head for s in
+  NOT NOTICED  fg/stages.py:326  comparison  '==' -> '!='   | if state[s["name"]] == "miss" and BREAK("stages_stop_first"):
+  NOT NOTICED  fg/stages.py:378  and/or  'or' -> 'and'   | w = res.get("whole") or {}
+  NOT NOTICED  fg/stages.py:85  number  '1' -> '0'   | json.dump(res, f, indent=1)
+  NOT NOTICED  fg/stages.py:332  comparison  '==' -> '!='   | ran = sum(1 for s, act, _ in pl if act == "run" and state.get(s["name"]) in ("ok", "miss")
+  NOT NOTICED  fg/stages.py:26  number  '0' -> '1'   | sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+  NOT NOTICED  fg/stages.py:83  true/false  'True' -> 'False'   | os.makedirs(os.path.dirname(path(cfg)), exist_ok=True)
+  NOT NOTICED  fg/stages.py:155  not  'not ' -> ''   | if not prev:
+  NOT NOTICED  fg/stages.py:261  and/or  'or' -> 'and'   | for k, v in (res["steps"].get(s["name"], {}).get("tests") or {}).items():
+  NOT NOTICED  fg/stages.py:243  comparison  '==' -> '!='   | if act == "keep":
+  NOT NOTICED  fg/stages.py:109  comparison  '>' -> '<='   | if time.time() - float(w.get("when", 0)) > days * DAY:
+  NOT NOTICED  fg/stages.py:182  number  '10' -> '11'   | return "keep", "passed on %s; nothing it guards changed since" % prev["commit"][:10]
+  NOT NOTICED  fg/stages.py:363  and/or  'and' -> 'or'   | if not problem and _record_whole(cfg, S, res, state, head):
+  NOT NOTICED  fg/stages.py:221  comparison  '!=' -> '=='   | return not BREAK("stages_moved") and (_head(root) != head or not _clean(root))
+  NOT NOTICED  fg/stages.py:32  comparison  '==' -> '!='   | BREAK = lambda k: os.environ.get("FG_BREAK", "") == k
+  NOT NOTICED  fg/stages.py:175  and/or  'and' -> 'or'   | if not s.get("guards") and not BREAK("stages_always"):
+  NOT NOTICED  fg/stages.py:270  comparison  '==' -> '!='   | tails = "".join("\n--- %s ---\n%s" % (n, (res["steps"].get(n, {}).get("tail", "") if state
+  NOT NOTICED  fg/stages.py:208  and/or  'and' -> 'or'   | if not ok and not out.strip():
+  NOT NOTICED  fg/stages.py:90  comparison  '!=' -> '=='   | if git("merge-base", "--is-ancestor", old, new, cwd=root).returncode != 0:
+  NOT NOTICED  fg/stages.py:189  and/or  'and' -> 'or'   | st = {"whole": whole and not BREAK("stages_whole_flag"), "setup_changed": bool(setup_chang
+  NOT NOTICED  fg/stages.py:66  and/or  'or' -> 'and'   | body = json.dumps([s.get("command"), sorted(s.get("guards") or []), bool(s.get("always")),
+  NOT NOTICED  fg/stages.py:94  comparison  '!=' -> '=='   | return None if p.returncode != 0 else [l for l in p.stdout.splitlines() if l.strip()]
+  NOT NOTICED  fg/stages.py:67  number  '16' -> '17'   | return hashlib.sha256(body.encode()).hexdigest()[:16]
+  NOT NOTICED  fg/stages.py:204  number  '1200' -> '1201'   | out = (p.stdout + p.stderr)[-1200:]
+  NOT NOTICED  fg/stages.py:364  arithmetic  '+=' -> '-='   | head_line += "; this counts as a whole run"
+  NOT NOTICED  fg/stages.py:217  comparison  '!=' -> '=='   | return next((n for n in s.get("needs") or [] if state.get(n) != "ok"), None)
+A line listed here can be wrong in the way shown and every test still passes. Add a test that fails with the change, or note why the change cannot matter.

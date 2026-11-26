@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Tide Pool</title></head>
+<body>
+<canvas id="c" width="320" height="200"></canvas>
+<script type="module">
+import { step, makeWorld } from "./sim/world.js";
+const ctx = document.getElementById("c").getContext("2d");
+let world = makeWorld(42);
+function draw() {
+  ctx.fillStyle = "#123";
+  ctx.fillRect(0, 0, 320, 200);
+  ctx.fillStyle = "#6cf";
+  ctx.fillRect(0, 200 - world.tide, 320, world.tide);
+  document.title = `Tide ${world.tide}`;
+}
+function frame() {
+  world = step(world);
+  draw();
+  requestAnimationFrame(frame);
+}
+window.world = () => world;
+frame();
+</script>
+</body>
+</html>

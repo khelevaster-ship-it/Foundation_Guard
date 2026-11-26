@@ -1,0 +1,13 @@
+MATCH     noticed     noticed     fg/logic.py:203 'or' -> 'and'
+MATCH     noticed     noticed     fg/logic.py:395 '+' -> '-'
+MATCH     noticed     noticed     fg/logic.py:222 '==' -> '!='
+MATCH     not noticed not noticed fg/logic.py:107 '==' -> '!='
+MATCH     not noticed not noticed fg/logic.py:437 '1' -> '0'
+MATCH     noticed     noticed     fg/logic.py:354 '>' -> '<='
+MATCH     noticed     noticed     fg/logic.py:172 '>' -> '<='
+MATCH     not noticed not noticed fg/logic.py:204 'or' -> 'and'
+MATCH     noticed     noticed     fg/logic.py:65 '==' -> '!='
+MATCH     noticed     noticed     fg/logic.py:303 '!=' -> '=='
+MATCH     noticed     noticed     fg/logic.py:76 'False' -> 'True'
+MATCH     noticed     noticed     fg/logic.py:171 '==' -> '!='
+REPLAY 12 of 12 verdicts match (seed 20261112, drawn from 60 tried changes)

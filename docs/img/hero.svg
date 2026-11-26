@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" role="img" aria-label="FoundationGuard. Your AI helper can't mark its own homework.">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d1117"/><stop offset="1" stop-color="#12202b"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0" r="0.75"><stop offset="0" stop-color="#3ddc97" stop-opacity="0.20"/><stop offset="1" stop-color="#3ddc97" stop-opacity="0"/></radialGradient>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#ffffff" fill-opacity="0.05"/></pattern>
+  </defs>
+  <rect x="0.5" y="0.5" width="799" height="299" rx="16" fill="url(#bg)" stroke="#30363d"/>
+  <rect x="0.5" y="0.5" width="799" height="299" rx="16" fill="url(#dots)"/>
+  <rect x="0.5" y="0.5" width="799" height="299" rx="16" fill="url(#glow)"/>
+  <g transform="translate(246 50)">
+    <path d="M17 1 L32 6.5 V19 C32 28.5 25.5 35 17 38 C8.5 35 2 28.5 2 19 V6.5 Z" fill="#3ddc97" fill-opacity="0.12" stroke="#3ddc97" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M10 19.5 L15.2 24.7 L24.5 13.5" fill="none" stroke="#3ddc97" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="46" y="30" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="31" font-weight="650" fill="#f0f6fc" letter-spacing="-0.3">Foundation<tspan fill="#3ddc97">Guard</tspan></text>
+  </g>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="47" font-weight="750" fill="#ffffff" text-anchor="middle" letter-spacing="-0.8">
+    <text x="400" y="172">Your AI helper can&#8217;t mark</text>
+    <text x="400" y="228">its own homework.</text>
+  </g>
+  <rect x="368" y="258" width="64" height="4" rx="2" fill="#3ddc97"/>
+</svg>

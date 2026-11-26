@@ -1,0 +1,206 @@
+[
+ {
+  "id": "approved:Checks not yet reviewed",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Checks not yet reviewed\n     What happened: Some checks haven't been looked at by a second helper.\n     What it means: A check written by one helper alone may test the wrong thing.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "approved:A feature you approved is broken",
+  "who": "helper",
+  "action": "Reject. The helper must fix it. If the helper says the change was on purpose, say yes only if you asked for it.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] A feature you approved is broken\n     What happened: 1 check(s) for features you approved failed.\n     What it means: Something you signed off no longer works.\n     Recommended: Reject. The helper must fix it. If the helper says the change was on purpose, say yes only if you asked for it.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "structure:Parts that depend on each other in a loop",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Parts that depend on each other in a loop\n     What happened: 1 loop(s) between parts of the game.\n     What it means: Parts in a loop can't be changed or tested on their own.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "assets:AI-made files without the tool named",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] AI-made files without the tool named\n     What happened: 1 AI-made file(s) don't say which AI tool made them.\n     What it means: The credits must say which tool made them.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "gate:The tests couldn't run at all",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] The tests couldn't run at all\n     What happened: The game engine (the program the game is built in) couldn't run the tests: the code had a mistake that stopped it from starting, the project didn't open, or the program wasn't signed in to its account.\n     What it means: Nothing was tested, so nobody knows whether anything is broken.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "docs:Docs that are no longer true",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Docs that are no longer true\n     What happened: 1 line(s) in the project's notes name files, settings or numbers that aren't true any more.\n     What it means: A new helper reading the notes would be misled.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "assets:Unknown licence",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Unknown licence\n     What happened: 1 entries in the list of the game's pictures, sounds and other files have no licence (the permission to use them) written down, or one the tool doesn't know.\n     What it means: Nobody can say whether the game may use those files.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "tiny:Code chopped into many tiny files",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Code chopped into many tiny files\n     What happened: One upload added many very small code files.\n     What it means: This can be a way of getting around the size limits instead of tidying the code.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "assets:Credit details missing",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Credit details missing\n     What happened: 1 entries need the maker's name or a web link, which their licence (the permission to use them) requires.\n     What it means: The game would break the licence by not crediting them properly.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "gate:The tests left no report",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] The tests left no report\n     What happened: The tests said they passed, but they wrote no report of which tests ran.\n     What it means: Nobody can tell what was tested; an old report must never stand in for this run.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "gate:The tests didn't say they passed",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] The tests didn't say they passed\n     What happened: The test run finished but never printed its 'passed' line.\n     What it means: The tests may not have run at all.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "approved:An approved feature's check didn't run",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] An approved feature's check didn't run\n     What happened: 1 check(s) for features you approved didn't run.\n     What it means: The feature might be broken and nobody would know.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "gate:The full test run failed after a setup change",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] The full test run failed after a setup change\n     What happened: Something on this computer changed (for example a Windows update, or a new version of the program the game is built in), so every test ran, and some failed.\n     What it means: That change may have broken something that worked before.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "structure:One part reaches into another it shouldn't",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] One part reaches into another it shouldn't\n     What happened: 1 line(s) in one part of the game use another part's inside workings instead of the agreed way in.\n     What it means: Parts that reach into each other break each other when either changes.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "rules:More risky maths in the part that must match on every computer",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] More risky maths in the part that must match on every computer\n     What happened: 1 file(s) in the part of the game that must work out the same on every computer now use more maths that can give slightly different answers on different computers.\n     What it means: Saves, replays and multiplayer could drift apart between computers.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "docs:Parts the docs don't mention",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Parts the docs don't mention\n     What happened: 1 part(s) of the project aren't described in the project's notes.\n     What it means: A new helper won't know they exist or why.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "docs:Today's notes weren't updated",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Today's notes weren't updated\n     What happened: The code changed, but the notes the helper leaves for the next helper didn't.\n     What it means: The next helper won't know what changed or what's next.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "approved:An approved feature has no check",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] An approved feature has no check\n     What happened: 1 approved feature(s) have no automatic check named.\n     What it means: A feature you approved could break and nobody would notice.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "structure:Files that are too big",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Files that are too big\n     What happened: 1 file(s) are over the size limit, or grew past the size they had when the limit was set.\n     What it means: Very big files are hard to check and easy to break.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "structure:Copy-pasted code",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Copy-pasted code\n     What happened: 1 block(s) of code appear in more than one place.\n     What it means: A fix made in one copy is easily missed in the other.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "gate:No tests are set up",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper runs the safety tool's setup again. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] No tests are set up\n     What happened: The safety tool doesn't know how to run the project's automatic tests.\n     What it means: Nothing can be checked, so nothing can be uploaded.\n     Recommended: Nothing for you to decide: the helper runs the safety tool's setup again. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "structure:Code that is too tangled",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Code that is too tangled\n     What happened: 1 piece(s) of code make too many choices, or have choices inside choices inside choices.\n     What it means: Tangled code is where bugs hide; it gets harder to change without breaking something.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "rules:dep_safe",
+  "who": "you",
+  "action": "Allow only if you asked for it. To allow, tell the helper \"allow numpy\" in your own words; to reject, just say \"no\".",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 1 decision for you, 0 things for the helper to fix.\n  1. [FOR YOU] New outside software: numpy\n     What happened: A piece of outside software called 'numpy' was added (a Python package, named in src/weather.py).\n     What it means: Facts from the files on this computer (no internet lookup): version 2.1.0; from PyPI; licence BSD-3-Clause: lets you sell the game; the helper adds its copyright notice to the credits.\n     Recommended: Allow only if you asked for it. To allow, tell the helper \"allow numpy\" in your own words; to reject, just say \"no\".\n     For the helper: new dependency python:numpy (src/weather.py)\n======================================================================"
+ },
+ {
+  "id": "docs:Something was undone without a note",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Something was undone without a note\n     What happened: This upload undoes earlier work, but the list of ideas that were tried and dropped wasn't updated.\n     What it means: The next helper may try the same idea again.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "assets:Bought files without their store page",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Bought files without their store page\n     What happened: 1 bought file(s) have no web link to the shop page or the licence (the permission to use them).\n     What it means: Nobody could show the purchase if asked.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "gate:The project's own tests failed",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] The project's own tests failed\n     What happened: Some of the automatic tests failed on this version.\n     What it means: Something that used to work may be broken now. If you asked for a change in how something works, the helper updates the test; you still have nothing to do.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "assets:Pictures, sounds or models with no recorded source",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Pictures, sounds or models with no recorded source\n     What happened: 1 file(s) have no record of where they came from.\n     What it means: Nobody can show the game is allowed to use them.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "approved:An approved feature's check can't be proven",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] An approved feature's check can't be proven\n     What happened: 1 approved feature(s) can't be switched off on purpose for a moment, so nobody can prove that their check would notice if they broke.\n     What it means: The check might pass even when the feature is broken.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "assets:A licence that forbids selling or changing",
+  "who": "you",
+  "action": "Reject. The helper must replace these files with ones the game may sell.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 1 decision for you, 0 things for the helper to fix.\n  1. [FOR YOU] A licence that forbids selling or changing\n     What happened: 1 file(s) have a licence (the permission to use them) that forbids selling them or changing them.\n     What it means: The game is marked as one that will be sold, so these files can't stay in it.\n     Recommended: Reject. The helper must replace these files with ones the game may sell.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "secrets:A password or key is about to be uploaded",
+  "who": "helper",
+  "action": "Nothing is uploaded. The helper takes it out. If it was ever uploaded before, it must also be replaced with a new one.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] A password or key is about to be uploaded\n     What happened: Some new lines look like a password or a secret key.\n     What it means: Anyone who can see the project could use it.\n     Recommended: Nothing is uploaded. The helper takes it out. If it was ever uploaded before, it must also be replaced with a new one.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "structure:Pieces of code that are too long",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Pieces of code that are too long\n     What happened: 1 piece(s) of code are longer than the limit, or grew past the size they had when the limit was set.\n     What it means: This is about how the code is organised, not about what you asked for: long pieces of code are hard to check and easy to break.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ },
+ {
+  "id": "lock:Your project isn't locked on GitHub yet",
+  "who": "you",
+  "action": "Say to your helper: \"walk me through the GitHub lock\". It takes about 15 minutes.",
+  "text": "\n======================================================================\nSUMMARY: The tests passed, BUT 1 thing needs your decision before you say yes.\n  1. [FOR YOU] Your project isn't locked on GitHub yet\n     What happened: GitHub (the website that keeps the online copy of your project) would accept changes that skip these checks.\n     What it means: Every check here runs on this computer, and anyone working here, an AI helper included, can switch it off. Only GitHub's own lock can't be switched off from here.\n     Recommended: Say to your helper: \"walk me through the GitHub lock\". It takes about 15 minutes.\n     For the helper: Before other work, walk the owner through  python fg/lock.py --steps  one step at a time, and wait for them to click. Never change GitHub settings yourself.\n     For the helper: the owner hasn't said the GitHub steps are done\n======================================================================"
+ },
+ {
+  "id": "weaker",
+  "who": "you",
+  "action": "Reject unless you asked for exactly this. To reject, just tell the helper \"no\".",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 1 decision for you, 0 things for the helper to fix.\n  1. [FOR YOU] A check was made weaker: tests/test_save.py\n     What happened: a check was removed (test_old_saves_load).\n     What it means: Something that protects the game will now catch less.\n     Recommended: Reject unless you asked for exactly this. To reject, just tell the helper \"no\".\n     For the helper: tests/test_save.py\n======================================================================"
+ },
+ {
+  "id": "structure:Parts of the code that are too big or too spread out",
+  "who": "helper",
+  "action": "Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.",
+  "text": "\n======================================================================\nSUMMARY: NOT UPLOADED. 0 decisions for you, 1 thing for the helper to fix.\n  1. [for the helper] Parts of the code that are too big or too spread out\n     What happened: 1 part(s) of the code are too big, or spread over too many files.\n     What it means: One part of the code is doing too many jobs, which makes every change riskier.\n     Recommended: Nothing for you to decide: the helper fixes this. Nothing is uploaded until it is fixed.\n     For the helper: (example evidence line)\n======================================================================"
+ }
+]
