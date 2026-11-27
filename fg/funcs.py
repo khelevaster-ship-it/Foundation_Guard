@@ -28,6 +28,10 @@ def _verbatim_end(s, j, n):
     return j
 
 
+PLAIN = re.compile(r"[^\"'#/$@`]*")                # only these characters can start a comment, a string or a template
+PLAIN_HOLE = re.compile(r"[^\"'#/$@`{}]*")         # inside a JS ${...} hole its braces count too
+
+
 class _Cleaner:
     """Reads lines one by one, keeping what runs on between lines: block comments, raw strings, verbatim strings,
     template literals and #if 0 blocks. Each step below looks at position i and returns the next position, or None
@@ -193,7 +197,12 @@ class _Cleaner:
             return ""
         res, i, n = [], 0, len(s)
         steps = [getattr(self, k) for k in self.STEPS]
+        fast = not _BRK("cleaner_fast")
         while i < n:
+            if fast and not (self.c or self.raw is not None or self.verb or self.tpl):
+                m = (PLAIN_HOLE if self.holes else PLAIN).match(s, i)   # 27 Nov: the game's PC measured 3,000 files
+                if m.end() > i:                                        # char by char (77 s); a run of characters no
+                    res.append(m.group()); i = m.end(); continue       # step looks at is copied in one go
             nxt = next((r for r in (st(s, i, n, res) for st in steps) if r is not None), None)
             if nxt is None:
                 res.append(s[i]); nxt = i + 1
@@ -246,10 +255,21 @@ def _hole_step(s, j, d, res):
     return j + 1, d
 
 
+_CLEAN = {}
+
+
 def clean_lines(lines, ext=""):
-    """Comment-, string- and #if 0-free copy of the lines (same count). Keeps braces of code only."""
+    """Comment-, string- and #if 0-free copy of the lines (same count). Keeps braces of code only. The size check
+    cleans each file several times over (blocks, functions, imports, boundaries), so one run remembers each answer."""
+    key = (ext, os.environ.get("FG_BREAK", ""), "\n".join(lines))
+    if key in _CLEAN:
+        return list(_CLEAN[key])
     cl = _Cleaner(ext)
-    return [cl.line(ln) for ln in lines]
+    out = [cl.line(ln) for ln in lines]
+    if len(_CLEAN) > 20000:
+        _CLEAN.clear()
+    _CLEAN[key] = tuple(out)
+    return out
 
 KT_VAL = re.compile(r"^(?:(?:private|public|internal|protected|override|open|lazy|static)\s+)*(?:val|var|let)\s+([A-Za-z_]\w*)\b.*=\s*$")
 NOT_NAMES = ("if", "for", "while", "switch", "catch", "return", "sizeof", "decltype", "new", "throw", "alignas", "static_assert")

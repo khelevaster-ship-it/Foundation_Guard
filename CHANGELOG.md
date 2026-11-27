@@ -3,6 +3,51 @@
 Newest first. F-numbers are rows in `APPROVED.md`. Dates are 2026. Scores are before any fix unless marked post hoc.
 
 ## Next version (not yet released): Windows CI green, a guard that fails closed, and web projects
+- **A list of checks isn't "too many choices"** (F561; 27 Nov). In a test file, a check line's own condition no longer
+  counts toward the function's choices; its loops still do. Game code is counted as before.
+- **The size check before the box is fast** (F558-F560; 27 Nov). On the game's 3,000 files it took 77 s against the
+  guard's 20 s limit and blocked the upload. The cleaner now reads plain runs of code at once, the base-branch line
+  counts come from one git call, and the box's check remembers unchanged files (the gate still measures everything).
+  On a copy of the game: 52 s before, 8 s for the gate, 2.4 s for the box.
+- **Quick checks before the tests** (F556; 26 Nov). The owner waited through 6 minutes of tests before the tiny-file
+  check stopped the upload. The checks that read only the code now run first. When they stop it, the approved rows are
+  also judged as written (a check named, a way to break it), so every problem still shows in one run (F103).
+- **A wait step doesn't take the owner's change as its own** (F557; 25 Nov). With `"wait_commands"`, a helper step that
+  only waits is judged as time between steps, so the owner's own commands meanwhile stay.
+- **A big upload's yes box opens in time** (F554, F555; 26 Nov). After a merge of 38 test files the owner-OK list
+  took past the guard's 20 s limit, and the upload was blocked. It now reads all versions in one git call, and if the
+  list still can't be made in time the box asks anyway and says so.
+- **A merge the helper commits keeps what git merged** (F552, F553; 25 Nov). The owner started a merge in his own
+  window, the helper resolved the conflicts in the box and committed, and the kit put back three files the merge
+  brought. Now a merge with a commit the kit trusts keeps exactly what git's own merge makes, removals included, and
+  yeses given in the box while the merge was open count.
+- **Added checks and floor raises pass without a box** (F547-F551; 24 Nov, the owner's choice). On 23 Nov 7 of 16
+  boxes were for changes that only added checks. Now passed, judged by what changed: a floor file raised, a recorded
+  value written where it was 0, a new case counted in the total, a closed new check block in a shell script, and a
+  new pin file. Restructures, kit settings and rewritten records still ask (`fg/addchecks.py`).
+- **Another session's running step keeps its file** (F545; 24 Nov). A build step the owner allowed was still running
+  when a second session's step ended, and that step's check put the file back. Such a file now waits for its own
+  step's check.
+- **A copy with another kit is left to its own hooks** (F546; 24 Nov). The play copy's older kit judged the work copy
+  by older rules. Copies running a different kit no longer judge each other.
+- **The ratchet follows moved functions, and says what it did** (F543, F544; 24 Nov). After a split moved
+  functions to new files, `structure.py --ratchet` kept only exact names: it dropped 54 entries and the next check
+  failed 44 functions. It now keeps a moved function's entry as the check does, and logs how many it kept and dropped.
+- **A No in the box stays a No** (F542; 23 Nov, found on the way). An edit the owner refused left its note for a
+  day, and a later step that wrote exactly its text was kept as if he had said yes. Only a step started together with
+  the yes'd edit is covered now.
+- **A yes in the box counts at the upload for any change** (F540; 23 Nov). The owner allowed a settings edit the box
+  flagged as "may catch less", and the upload asked again: the box's yes had carried over only for gathered changes.
+  It now counts for that exact text, once.
+- **The upload asks the typed yes in the owner's own window** (F541; 23 Nov). Run there, it stopped with "1 decision
+  for you" and no way to answer. It now shows what the yes is for and asks for the typed code.
+- **A slow size check no longer blocks the upload** (F539; 23 Nov). On the game's repo the size check before the
+  upload's yes box (F526) took over 100 s, past the AI tool's 20 s limit, so the guard failed safe and blocked the
+  upload. It now gets 8 s (`"size_check_before_yes_s"`); a slower one is left to the gate and the box says so.
+- **A write word in quoted prose is not a write** (F538; 23 Nov). A wait script given the reason "the kit install
+  (x.bat) or the rotation" and the read-only test "! git diff --quiet -- fg/" asked the owner whether the helper
+  changes fg/. A quoted argument the program takes as text no longer turns a file named in another argument into a
+  write. A quoted argument that is or may be a command still counts.
 - **An update with no yes from the owner changes nothing** (F508; 20 Nov). On the game's PC a helper ran the
   kit's `update.py` and no box opened. All 22 files were copied, the check after the step put back the 6 guarded
   ones, and the kit was half old and half new until the owner ran it himself. The update now looks for the owner
@@ -16,7 +61,7 @@ Newest first. F-numbers are rows in `APPROVED.md`. Dates are 2026. Scores are be
 - **A file named only in sed's replacement text is not a write to it** (F520; 21 Nov). A notes line edited with
   `sed -i "s|old|new text naming a guard file|" notes.md` asked the owner, though only notes.md was written. For
   one plain substitution only the files after the script count now. A guard file among them still asks.
-- **A > inside quotes is not a redirect** (F521; 21 Nov). A search for `"PC->God[A-Z]*("` asked the owner about a
+- **A > inside quotes is not a redirect** (F521; 21 Nov). A search for `"PC->My[A-Z]*("` asked the owner about a
   redirect into the game's project file. Quoted text is a string to the shell; quoted text a shell runs
   (`bash -c`, `eval`, `find -exec`) still counts.
 - **A gathered change says no box is open** (F522; 21 Nov). The step's output now says "NO BOX NOW: ... the owner's
