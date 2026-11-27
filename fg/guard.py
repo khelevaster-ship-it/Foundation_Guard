@@ -2421,6 +2421,12 @@ def _runs_owner_ok(cmd):
     """Does the command run fg/ownerok.py --give? (fg/ownerwords.py)"""
     if BREAK("owner_ok_spoken"):
         return OW.runs("", spoken=cmd)
+    if PW.VARIABLES and not BREAK("owner_ok_python_variable"):
+        # the game's PC, 27 Nov: "$PY" -I fg/ownerok.py only listed what waits for a yes, but $PY was a word the kit
+        # couldn't see, so it opened the owner's yes box, and the owner later answered a second box for --give. A
+        # variable the owner named in "python_variables" is read as python
+        names = "|".join(re.escape(v) for v in PW.VARIABLES)
+        cmd = re.sub(r"""(["']?)\$(?:\{(?:%s)\}|(?:%s)\b)\1""" % (names, names), "python", cmd)
     return OW.runs(_said_only_gone(re.sub(r"(^|\s)#[^\n]*", r"\1", _harmless_gone(_heredoc_data_gone(cmd.replace("\\\n", " "))))))
 
 

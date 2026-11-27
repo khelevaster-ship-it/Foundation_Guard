@@ -8029,3 +8029,21 @@ def test_files_changed_between_steps_look_at_the_remote_once(tmp_path):
     t = time.time(); _helper_step(r, "Bash", {"command": "git status"})
     assert time.time() - t < 5, time.time() - t                                 # one look (2 s), not three (6 s)
     assert json.loads((r / "foundationguard.json").read_text()).get("guard_paths") != []          # still put back
+
+
+def test_listing_the_owners_yes_with_a_named_python_variable_opens_no_box(tmp_path):
+    # the game's PC, 27 Nov: "$PY" -I fg/ownerok.py (only listing what waits for the owner's yes) opened the yes box,
+    # because $PY was a word the kit couldn't see; the owner took that as the yes and answered a second box for --give.
+    # With "python_variables": ["PY"], $PY is read as python: listing opens no box, --give still does
+    r = _tests_repo(tmp_path, python_variables=["PY"])
+    t = r / "tests" / "test_a.py"; t.write_text(t.read_text() + "\n\ndef test_b():\n    assert compute() == 5\n")
+    _commit(r, "a test")                                                         # something for the list to show
+    assert ASKED not in hook("Bash", {"command": '"$PY" -I fg/ownerok.py 2>&1 | tail -3'}, r).stdout
+    sys.path.insert(0, FG)
+    import guard as G, pywrites as PW
+    PW.VARIABLES[:] = ["PY"]
+    try:
+        assert G._runs_owner_ok('"$PY" -I fg/ownerok.py --give') and G._runs_owner_ok('"$PYX" fg/ownerok.py')
+        assert not G._runs_owner_ok('"$PY" -I fg/ownerok.py 2>&1 | tail -3')
+    finally:
+        PW.VARIABLES[:] = []
