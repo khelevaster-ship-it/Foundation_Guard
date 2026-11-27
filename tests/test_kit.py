@@ -8000,6 +8000,7 @@ def _slow_remote(r, seconds):
     sh(f'git remote set-url origin "ext::{py} -c import% time;time.sleep({seconds})"', r)
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="the owner's terminal is played with a pty, which Windows lacks")
 def test_the_owners_kit_update_is_known_before_any_remote_lookup(tmp_path):
     # the game's PC, 27 Nov: the owner's kit update changed 12 kit files; at the next helper step each was first looked
     # up on the remote (up to 8 s each) before the kit read its own record that the owner's command wrote it, so every
