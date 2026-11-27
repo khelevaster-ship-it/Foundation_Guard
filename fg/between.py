@@ -25,9 +25,13 @@ BREAK = lambda k: os.environ.get("FG_BREAK", "") == k
 SAID = "between_said"
 
 
+TIPS = {}                                                # the remote's branch tips, looked up once per judging
+
+
 def judge(cfg, st, now, changed, SP):
     """Judge each changed file; st (the accepted state) is updated and saved by the caller."""
     import catches as CL
+    TIPS.clear()
     base, news = st["files"], st.setdefault("news", [])
     said = st.setdefault(SAID, [])
     gh = SP.github_copy(cfg, changed, now)               # team mode: exactly as GitHub has it is never judged
@@ -44,8 +48,8 @@ def judge(cfg, st, now, changed, SP):
             continue
         if k == "record" and not BREAK("records_door_only"):
             _back(cfg, r, base, now, SP, news, said, "the kit's own record; only the kit writes it")
-        elif k == "switch" and not BREAK("between_switches") and not _owners_switch(cfg, r, base, now, SP) \
-                and not D.blesses(cfg, r, base.get(r), now[r]):     # the owner's own kit command (fg/door.py)
+        elif k == "switch" and not BREAK("between_switches") and not _blessed_first(cfg, r, base, now) \
+                and not _owners_switch(cfg, r, base, now, SP):
             _back(cfg, r, base, now, SP, news, said, "it can switch the kit off; if you made it yourself, keep it with "
                   f"python fg/steps.py --keep {r} (the kit's box asks you), or ask the helper and say yes in the box")
         elif T.gate_record(r, cfg):                     # the project's gate wrote it (a pass file): taken, not held
@@ -78,6 +82,15 @@ def _take(cfg, r, base, now, SP):
         base[r] = now[r]
     else:
         base.pop(r, None)
+
+
+def _blessed_first(cfg, r, base, now):
+    """The owner's own kit command wrote it (fg/door.py), read from the kit's own record. The game's PC, 27 Nov: after
+    the owner's kit update changed 12 files, each was first looked up on the remote (up to 8 s each) before this quick
+    check was reached, so every helper step ran past the guard's 20 s and was refused. The quick check now comes first."""
+    if BREAK("between_door_first"):
+        return False
+    return D.blesses(cfg, r, base.get(r), now[r])
 
 
 def _owners_switch(cfg, r, base, now, SP):
@@ -122,11 +135,13 @@ def _as_remote(cfg, r, now, SP):
     if not now[r].get("id") and SP._blob_at(root, "HEAD", r):
         return False
     gid = SP._as_git(root, [r], now).get(r) if now[r].get("id") else None
-    try:
-        import ownerok as OK
-        tips = list((OK._remote_heads(root) or {}).values())
-    except Exception:
-        tips = []
+    if root not in TIPS or BREAK("between_remote_once"):      # one look at the remote for all the files (27 Nov)
+        try:
+            import ownerok as OK
+            TIPS[root] = list((OK._remote_heads(root) or {}).values())
+        except Exception:
+            TIPS[root] = []
+    tips = TIPS[root]
     if not tips:
         return False
     p = SP._git(root, "cat-file", "--batch-check=%(objectname)", data=("\n".join(f"{t}:{r}" for t in tips) + "\n").encode())
