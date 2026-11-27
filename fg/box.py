@@ -49,10 +49,42 @@ def _frame(rule, f, weaker):
             if "can't tell where it lands" in r and not BREAK("variable_write_words")
             else f"the helper changes '{f}' ({_kind(f)})")
     if weaker:
-        return (what, "the kit thinks this makes a check weaker, so a real problem could slip past it",
+        said = PLAIN_NOW[0] if not BREAK("box_plain_why") else ""
+        return (what, (said + ", so a real problem could slip past it") if said else
+                "the kit thinks this makes a check weaker, so a real problem could slip past it",
                 "No, unless you asked for exactly this; ask the helper why first")
     return (what, "a check that protects your project could catch less, though the kit saw no sign of that",
             "Yes if it's part of the work you asked for; otherwise No")
+
+
+# The game's PC, 27 Nov: the owner couldn't judge a box whose only explanation was a quoted line of test code. What the
+# kit found is said in plain words in "What could go wrong"; the code stays in the details.
+PLAIN = (("a check line was changed, and the kit can't tell", "one of the test's existing checks was rewritten, and the "
+          "kit can't tell whether it now lets more through"),
+         ("a check line was commented out", "one of the test's checks was switched off"),
+         ("a check line was removed", "one of the test's checks was deleted"),
+         ("a check was replaced by one that always passes", "a check was swapped for one that can never fail"),
+         ("a test was removed", "a whole test was deleted"),
+         ("a skip was added", "a test was set to be skipped"),
+         ("a check that always passes was added", "a check that can never fail was added"),
+         ("the test now returns before checking", "the test now stops before it checks anything"),
+         ("a limit or frozen number went", "a limit the checks hold to was loosened"),
+         ("a minimum went down", "a minimum the checks hold to was lowered"),
+         ("approved row", "the check for something you approved was changed"),
+         ("an exception was added", "an exception was added, so the check now skips something"),
+         ("a waiver was added", "a waiver was added, so the check now lets something through"),
+         ("entries removed from", "things the check looks for were taken off its list"),
+         ("exceptions added to", "exceptions were added, so the check now skips something"))
+PLAIN_NOW = [""]
+
+
+def plain(reasons):
+    """The first of the kit's findings in plain words, or "" when it has none for it."""
+    for r in reasons or []:
+        for start, words in PLAIN:
+            if str(r).startswith(start):
+                return words
+    return ""
 
 
 def lead(rule, f, weaker):

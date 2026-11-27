@@ -1454,7 +1454,7 @@ QUOTE_RUNNERS = re.compile(r"(?:^|[\s;&|(`'\"/\\])(?:(?:ba|z|da|k|c|tc|fi)?sh|ev
 
 
 def _plain_quoted_spans(text):
-    """The game's PC, 21 Nov 04:50 UTC: grep -rn "PC->God[A-Z][A-Za-z]*(" Source asked the owner about a redirect into
+    """The game's PC, 21 Nov 04:50 UTC: grep -rn "PC->My[A-Z][A-Za-z]*(" Source asked the owner about a redirect into
     the game's project file, because the > of the search text "->" was read as a redirect into the pattern after it,
     and that pattern matched the project file. Text inside quotes is a character string to the shell: its > writes
     nothing. The (start, end) of each quoted string the shell runs nothing inside (no $(...) or `...`)."""
@@ -1890,6 +1890,8 @@ def _part_touch(seg, here, root, globs, text, cfg=None):
         return hit
     if not (WRITEISH.search(seg) or unclear or _sed_writes(seg)) or _reads_only(seg):    # only redirects, none into a guard file; or only reading
         return None
+    if not unclear and not _sed_writes(seg) and _write_word_apart(seg, here, root, globs, cfg):
+        return None
     var = VARIABLE.search(re.sub(r"'[^']*'", "", QUOTED_BODY.sub("", seg)))
     if var and _copy_from_variable(seg, here):
         var = None                                     # cp "$f" plain/path: a copy writes only where it lands
@@ -1912,6 +1914,36 @@ def _part_touch(seg, here, root, globs, text, cfg=None):
                         "its name in a part of the command that writes (the kit can't tell whether that part writes this "
                         "file or only names it)")
     return hit
+
+
+QUOTED_WORD = re.compile(r'"(?:[^"\\]|\\.)*"|\'[^\']*\'')
+HANDS_ON = re.compile(r"\b(xargs|find|parallel|eval|source|exec)\b|(?:^|\s)\.\s|\s-(?:c|e|Command|EncodedCommand)\b|\s/[cCkK]\b")
+
+
+def _write_word_apart(seg, here, root, globs, cfg=None):
+    """The game's PC, 23 Nov: bash Tools/Scripts/session_wait.sh 90 "the kit install (x.bat) or the rotation"
+    "! git diff --quiet -- fg/" asked the owner, because "install" in the quoted reason text looked like a write and
+    fg/ was named in the other, read-only argument. A write word only inside quoted arguments that name no guard file,
+    with none outside the quotes, writes nothing the kit guards: each quoted argument is one word to the program. Not
+    when a quoted argument starts with the write word, or has it right after ; & | or (, as a command would, or holds
+    a $ or ` (it could take its target from another argument), or when the command runs its words as code (-c, -e,
+    -Command, /c, xargs, find, eval, exec, source, .), and only for quotes that are whole words (F538)."""
+    if BREAK("write_word_apart"):
+        return False
+    found = list(QUOTED_WORD.finditer(seg))
+    if not found or "<<" in seg or any((m.start() and not seg[m.start() - 1].isspace())
+                                       or (m.end() < len(seg) and not seg[m.end()].isspace()) for m in found):
+        return False    # quotes inside code (open('x', 'w')) or a here-document: not whole words given to a program
+    quoted = [m.group(0) for m in found]
+    rest = QUOTED_WORD.sub(" ", seg)
+    if WRITEISH.search(rest) or HANDS_ON.search(rest):
+        return False
+    for q in quoted:
+        m = WRITEISH.search(q)
+        if m and (re.search(r"[$`]", q) or not q[1:m.start()].strip() or re.search(r"[;&|(]\s*$", q[1:m.start()])
+                  or _named_guard_file(q[1:-1], here, root, globs, cfg)):
+            return False        # "install x" / "a; rm y" begin a command, so they may be one; prose has words before
+    return True
 
 
 SED_PLAIN_OPTS = {"-i", "--in-place", "-E", "-r", "--regexp-extended", "-n", "--quiet", "--silent"}
@@ -2298,6 +2330,7 @@ def decide(why_file, cfg, reasons=None, special=None, rule=None, extra=""):
     looks_weaker = (bool(reasons) if BREAK("lead_change_is_weaker") else                 # the game's PC, 19 Nov: switching a
                     any(not r.startswith((W.UNSURE, W.CHANGE)) for r in reasons or []))  # stricter setting ON read "weaker"
     looks_weaker = looks_weaker or "WEAKER" in reason
+    BX.PLAIN_NOW[0] = BX.plain(reasons)                                               # the game's PC, 27 Nov
     reason = BX.lead(rule, getattr(why_file, "rel", why_file), looks_weaker) + reason   # the owner, 16 Nov
     key, here = why_file, cfg
     if isinstance(why_file, Elsewhere):                    # another copy's file: its own settings, its own catch log
@@ -2486,6 +2519,42 @@ ALLOW_TEXT = ("may the helper write the kit's recommended list into your AI tool
               "a helper to keep working without you at every step.")
 
 
+SIZE_NOTE = [""]
+
+
+LIST = {}
+
+
+def _missing_in_time(cfg):
+    """The changes waiting for the owner's yes (fg/ownerok.py), worked out once in this check, or None when the list
+    can't be made within "owner_ok_list_s" (8 s by default) from the start of the check. The game's PC, 26 Nov: after
+    a merge of 38 test files the list took past the AI tool's 20 s limit, the guard failed safe and blocked the upload;
+    now the box asks instead (F554)."""
+    import threading, ownerok as OK
+    if BREAK("ownerok_in_time"):
+        return OK.missing(cfg)
+    if "t" not in LIST:
+        LIST["t"] = threading.Thread(target=lambda: LIST.setdefault("v", OK.missing(cfg)), daemon=True)
+        LIST["t"].start()
+    LIST["t"].join(max(0.0, float(cfg.get("owner_ok_list_s", 8)) - (time.time() - T0)))
+    return LIST.get("v")
+
+
+def _size_check_in_time(cfg, ST):
+    """The game's PC, 23 Nov 20:55 UTC: on the game's repo the size check takes over 100 s, past the AI tool's 20 s
+    limit for this hook, so the guard failed safe and blocked every upload that needed the owner's yes. The check now
+    gets "size_check_before_yes_s" (8 s by default) and is skipped, with a note in the box, when it can't finish (F539).
+    It runs in a daemon thread: one left running ends with the hook."""
+    import threading
+    limit = min(float(cfg.get("size_check_before_yes_s", 8)), max(0.0, _time_limit() * 0.7 - (time.time() - T0)))
+    if BREAK("size_check_in_time"):
+        limit = 10 ** 6
+    out = []
+    t = threading.Thread(target=lambda: out.append(ST.check(cfg, cached=True)), daemon=True)
+    t.start(); t.join(limit)
+    return out[0] if out else (None, limit)
+
+
 def _size_before_yes(cfg):
     """The game's PC, 21 Nov: the owner said yes at the upload, then the size check stopped it (two test files past
     their recorded size); the helper split them and the owner was asked a second yes for the same work. When a yes is
@@ -2494,11 +2563,15 @@ def _size_before_yes(cfg):
         return
     import ownerok as OK, structure as ST
     try:
-        if not OK.missing(cfg):
+        if not _missing_in_time(cfg):                  # none waits for a yes, or the list ran out of time (F554)
             return
-        ok, rep = ST.check(cfg)
+        ok, rep = _size_check_in_time(cfg, ST)
     except Exception:
         return                                        # the upload's own gate still runs the check
+    if ok is None:
+        SIZE_NOTE[0] = (" The size check was not run before this box: it takes longer here than the box may wait (%g s); "
+                        "the upload's gate still runs it, so a size fault can still stop the upload after this yes." % rep)
+        return
     if ok:
         return
     fails = [l.strip()[5:] for l in rep.split("\n") if l.strip().startswith("FAIL ")]
@@ -2512,7 +2585,15 @@ def _owner_ok_prompt(cfg):
     the owner in the AI tool's own permission box. fg/ownerok.py --give accepts the yes only with that fresh note (or in a
     real terminal), so where this hook isn't running a helper cannot give the yes."""
     import ownerok as OK
-    todo = OK.missing(cfg) if not AB.ON[0] else [("", "", "")]   # --about: the yes the step may have given since
+    todo = _missing_in_time(cfg) if not AB.ON[0] else [("", "", "")]   # --about: the yes the step may have given since
+    if todo is None:                                  # the list ran out of time: ask, never block (F554)
+        if not BREAK("ownerok_note"):
+            OK.write_note(cfg)
+        decide("owner ok", cfg, special="YOUR YES TO A CHANGED GUARD: the kit couldn't list this upload's guard changes "
+               "in time (it takes longer here than the box may wait). A yes covers every guard change in this upload "
+               "that waits for your yes. To see them first, say no and run python fg/ownerok.py in your own window. "
+               + W.RULE, rule="the owner's yes to a changed guard")
+        return
     if not todo and not BREAK("owner_ok_spoken"):     # nothing waits for a yes: no box (and no note for a later --give)
         OK._take_note(cfg)
         return
@@ -2521,7 +2602,7 @@ def _owner_ok_prompt(cfg):
     what = (OK.brief(cfg, todo) if todo[0][0] else "") or "nothing at the moment"
     decide("owner ok", cfg, special="YOUR YES TO A CHANGED GUARD: may the upload include what the helper changed: " + what +
            "? Why: it guards your project, so it may catch less from now on. Say yes only if you asked for this; if you "
-           "didn't, say no and ask the helper to put it back. " + W.RULE, rule="the owner's yes to a changed guard")
+           "didn't, say no and ask the helper to put it back." + SIZE_NOTE[0] + " " + W.RULE, rule="the owner's yes to a changed guard")
 
 
 def _edit_tool(tool, ti, cfg, cwd):

@@ -99,13 +99,13 @@ def results(log):
     return res
 
 
-def _row_problem(r, cfg, got):
-    """Why one approved row isn't guarded, or None."""
+def _row_problem(r, cfg, got, written_only=False):
+    """Why one approved row isn't guarded, or None. written_only: judge only what the row says, before any test has run."""
     if not r["check"] or r["check"] in ("-", "none"):
         return f"{r['id']}: no check named"
     if not re.match(r"^(env:[A-Za-z_]\w*=.*|patch:.+)$", r["break"]):
         return f"{r['id']}: no way to break it on purpose (Break column), so its check can't be proven"
-    if not cfg.get("test_log") and not cfg.get("_steps_log"):
+    if written_only or (not cfg.get("test_log") and not cfg.get("_steps_log")):
         return None
     c = r["check"]
     hit = [v for k, v in got.items() if k == c or k.endswith("." + c) or k.endswith("::" + c)]
@@ -130,14 +130,17 @@ def _review_note(R, cfg, bad):
     return msg
 
 
-def check(cfg, got=None):
-    """got: {check name: passed} from a staged gate (fg/stages.py); without it the one test report is read."""
+def check(cfg, got=None, written_only=False):
+    """got: {check name: passed} from a staged gate (fg/stages.py); without it the one test report is read.
+    written_only: only the rows as written (a check named, a way to break it), for the quick checks before the tests."""
     R = rows(cfg)
-    if got is None:
+    if written_only:
+        got = {}
+    elif got is None:
         got = results(os.path.join(cfg["_root"], cfg["test_log"]) if cfg.get("test_log") else None)
-    bad = [p for p in (_row_problem(r, cfg, got) for r in R) if p]
+    bad = [p for p in (_row_problem(r, cfg, got, written_only) for r in R) if p]
     msg = f"APPROVED {len(R) - len(bad)} of {len(R)} approved behaviours checked" + ("" if not bad else ":\n  " + "\n  ".join(bad))
-    if not BREAK("review_col") and R:
+    if not BREAK("review_col") and R and not written_only:
         msg += _review_note(R, cfg, bad)
     return not bad, msg
 

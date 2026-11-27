@@ -112,9 +112,9 @@ def _staged(cfg, changed, notes, whole):
     return ((notes + report + "\n" + bad) if bad else None), notes + report + "\n", report
 
 
-def _kit_steps(cfg):
+def _kit_steps(cfg, early=False):
     on = lambda key, fn, default=False: (lambda: fn() if cfg.get(key, default) else (True, ""))
-    return [("approved", lambda: A.check(cfg, cfg.get("_got"))),
+    return [("approved", (lambda: A.check(cfg, written_only=True)) if early else (lambda: A.check(cfg, cfg.get("_got")))),
             ("structure", on("structure", lambda: ST.check(cfg))),
             ("rules", on("rules", lambda: RU.check(cfg))),
             ("assets", lambda: AS.check(cfg)),                              # licence ledger, once ASSETS.md exists
@@ -124,15 +124,25 @@ def _kit_steps(cfg):
            ([] if BREAK("state_part") else [("state", lambda: SC.check(cfg)[:2])])   # every saved field kept or explained
 
 
-def _kit_checks(cfg, cards):
+BEFORE_TESTS = ("structure", "rules", "assets", "tiny", "secrets", "docs", "state")   # read only the code, not the tests' results
+
+
+def _kit_checks(cfg, cards, only=None, skip=()):
     """(stopped?, report, warned parts) for the kit's own checks, each run as its parts mode says. Adds a card per problem.
     v0.8.5: every check runs even after one has stopped the push, so the owner sees all the problems at once."""
     report, warned, stopped = "", [], []
-    for name, fn in _kit_steps(cfg):
+    early = only is not None                         # before the tests: the approved rows are judged as written (F103 with F556)
+    for name, fn in _kit_steps(cfg, early):
+        if (only is not None and name not in only and not (early and name == "approved")) or name in skip:
+            continue
         mode = C.part(cfg, name)
+        if early and name == "approved" and mode in ("off", "warn"):
+            continue                                 # it can't stop the push, so only its run after the tests reports it
         if mode == "off":
             report += f"\n[{name} switched off in parts]"; continue
         ok_, rep_ = fn()
+        if ok_ and early and name == "approved":
+            continue                                 # it runs in full after the tests; say it once
         report += ("\n" + rep_) if rep_ else ""
         if ok_:
             continue
@@ -158,6 +168,12 @@ def run_gate(cfg, cards=None, whole=False):
         return False, "no gate_command in foundationguard.json"
     fp, changed = FP.changes(cfg)
     notes = ("SETUP CHANGED since the last pass (results checked in full before they're trusted):\n  " + "\n  ".join(changed) + "\n") if changed else ""
+    first, early, early_warned = (() if BREAK("cheap_first") else BEFORE_TESTS), "", []
+    if first:                                       # the game's PC, 26 Nov: the owner waited through 6 minutes of tests,
+        stopped, early, early_warned = _kit_checks(cfg, cards, only=first)   # then the tiny check stopped it (F556)
+        report = early
+        if stopped:
+            return False, notes + report + "\n[the tests were not run: these quick checks stopped the upload first]"
     bad, notes, out = _staged(cfg, changed, notes, whole) if staged else _commands(cfg, changed, notes)
     if not bad and not staged and cfg.get("gate_pass_regex") and not re.search(cfg["gate_pass_regex"], out):
         bad = "the gate's output lacks its pass line"
@@ -165,7 +181,8 @@ def run_gate(cfg, cards=None, whole=False):
     if bad:
         cards += CD.part_cards(cfg, "gate", bad)
         return False, bad
-    stopped, report, warned = _kit_checks(cfg, cards)
+    stopped, report, warned = _kit_checks(cfg, cards, skip=first)
+    report, warned = "\n".join(x for x in (early, report) if x), early_warned + warned
     if stopped:
         return False, notes + report
     phone = _github_asks(cfg)                                       # Plan 2 PR 7: GitHub's lock asks the owner instead
@@ -297,17 +314,19 @@ def main(argv):
     if "--break-glass" in argv and not BREAK("break_glass"):
         return break_glass(cfg, argv, br, passed_file)
     h = head(root)
-    OK.give_at_upload(cfg)           # the owner's yes in the box the hook opened on this upload, if it did
+    OK.give_at_upload(cfg) or OK.give_in_terminal(cfg)   # the owner's yes in the hook's box, or typed in their own window
     if _gate_once(cfg, root, h, passed_file, "--whole" in argv, gate_only="--gate" in argv):
         return 1
     if "--gate" in argv:
         print(f"FG-PUSH: gate passed on {h[:10]}."); return 0
     if _moved(root, h):
         print("FG-PUSH: HEAD is not the commit that passed: no push."); return 1
-    oks = LG.matching(cfg, OK.needing_ok(cfg))                      # the owner's OKs this upload carries
+    need = OK.needing_ok(cfg)
+    oks = LG.matching(cfg, need)                                    # the owner's OKs this upload carries
     rc = _push(root, h, br, f"FG-PUSH: pushed {h[:10]} to {br}.")
     if rc == 0 and not BREAK("push_uses_ok"):
         LG.use(cfg, oks)                                              # used up: they can't cover a later change
+        OK.used_box_yeses(cfg, need)
     return rc
 
 def break_glass(cfg, argv, br, passed_file):

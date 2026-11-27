@@ -628,9 +628,37 @@ def _with_git(root, rels, now, note):
     sure = _here(root, KN.trusted(root) + tips)
     KN.trust(root, _here(root, tips))                  # confirmed by the remote once: trusted for good
     if not KN.contains(root, head, sure):
-        return _as_at(root, cand, gid, tips + (sure if BREAK("steps_one_version") else []))
+        merged = _merged_cleanly(root, head, was["head"], rels, now, gid, sure)
+        return _as_at(root, cand, gid, tips + (sure if BREAK("steps_one_version") else [])) | merged
     gone = [] if BREAK("steps_git_absent") else [r for r in rels if not now[r].get("id") and not _blob_at(root, head, r)]
     return set(cand) | set(gone)
+
+
+def _merged_cleanly(root, head, before, rels, now, gid, sure):
+    """The game's PC, 25 Nov: the owner ran git merge --no-ff --no-commit of a cloud branch in his own window; the helper
+    resolved the conflicts in the kit's boxes and committed in a step. The new merge commit was not trusted yet, so the
+    files git merged on its own (and one the merge removed) were put back to their copies from before the merge, and the
+    folder no longer matched its own commit. When the new HEAD is a merge of the HEAD the step began at and a commit the
+    kit trusts, a file exactly as git's own merge of the two makes it (a removal too) is kept; a file a hand changed
+    while the merge was open is judged as before (F552)."""
+    if BREAK("merge_commit_kept"):
+        return set()
+    p = _git(root, "rev-list", "--parents", "-n1", head)
+    ids = p.stdout.decode("utf-8", "replace").split() if p and p.returncode == 0 else []
+    if len(ids) != 3 or ids[1] != before or not KN.contains(root, ids[2], sure):
+        return set()
+    m = _git(root, "merge-tree", "--write-tree", "--no-messages", before, ids[2])
+    tree = (m.stdout.decode("utf-8", "replace").split() or [""])[0] if m and m.returncode in (0, 1) else ""
+    if not tree:
+        return set()
+    kept = set()
+    for r in rels:
+        at, made = _blob_at(root, head, r), _blob_at(root, tree, r)
+        if r in gid and at and at == gid[r] and made == at:
+            kept.add(r)                                # as git's merge made it, and as the commit has it
+        elif not now[r].get("id") and not at and not made:
+            kept.add(r)                                # the merge removed it, and so does the commit
+    return kept
 
 
 def _at_uploaded_head(root, head, rels, now):
@@ -867,9 +895,28 @@ def _copies(cfg):
             pass
     out, own = [], _run_copies(cfg)
     for d in st.get("folders", []):
-        if os.path.isdir(d) and os.path.normcase(os.path.realpath(d)) not in own:
+        if os.path.isdir(d) and os.path.normcase(os.path.realpath(d)) not in own and _same_kit(d, cfg["_root"]):
             out.append(C.load(d) if os.path.exists(os.path.join(d, "foundationguard.json")) else C.load(d, cfg["_root"]))
     return out
+
+
+def _kit_print(root):
+    """The kit committed at this folder's HEAD (git's id for HEAD:fg), or None when HEAD holds no kit. The committed
+    kit, not the files on disk: a helper's change to a copy's kit files must not make that copy "another kit"."""
+    p = _git(root, "rev-parse", "-q", "--verify", "HEAD:fg")
+    out = p.stdout.decode("utf-8", "replace").strip() if p and p.returncode == 0 else ""
+    return out or None
+
+
+def _same_kit(d, root):
+    """The game's PC, 24 Nov: the play copy still ran the kit of 16 Nov, and its sessions' checks judged the work copy
+    (kit of 23 Nov) by the older rules, putting back a change the newer kit keeps. A copy whose HEAD holds a different
+    kit from this copy's HEAD is left to its own hooks, which judge it at their next step (F546). A copy where either
+    HEAD holds no kit is still judged, and so is one whose kit files only changed on disk."""
+    if BREAK("copies_same_kit"):
+        return True
+    there, here = _kit_print(d), _kit_print(root)
+    return there is None or here is None or there == here
 
 
 def _run_copies(cfg):
@@ -1024,6 +1071,10 @@ def _check(cfg, note, what, yes=None):
         return [], [], []
     base, root = st["files"], cfg["_root"]
     if git_busy(root):                                 # judged when git is done, against the last accepted copies
+        if yes is not None and not BREAK("busy_box_yes"):  # a yes in the box while git was busy still counts then (F552)
+            for r in now:
+                if now[r].get("id") != (base.get(r) or {}).get("id") and yes.covers(os.path.join(root, r)):
+                    _box_yes(cfg, r, now)
         return [], [], []
     changed = [r for r in now if (now[r].get("id") != (base.get(r) or {}).get("id"))]
     back, fail, held, keep = [], [], [], []
@@ -1038,7 +1089,7 @@ def _check(cfg, note, what, yes=None):
             if newly_covered(root, r, base, now, since, was.get("head")):
                 keep.append(r)                         # the guard list grew: taken as it is (the game's PC, 16 Nov)
                 _newly_told(cfg, r, what)
-            elif _yes(cfg, yes, note, r, full, base, now) and not BREAK("steps_keep"):
+            elif _yes(cfg, yes, note, r, full, base, now, what) and not BREAK("steps_keep"):
                 keep.append(r)
             elif r in git:
                 keep.append(r)
@@ -1048,6 +1099,8 @@ def _check(cfg, note, what, yes=None):
                 keep.append(r)
             elif T.gate_record(r, cfg) and not BREAK("gate_record_after"):   # the gate's own pass file: taken in a step
                 keep.append(r)                         # as between steps (the game's PC, 14 Nov: a running gate rewrote it)
+            elif _running_elsewhere(cfg, r, full, note):
+                continue                               # judged by that step's own check when it ends (F545)
             else:
                 gid = _as_git(root, [r], now).get(r) if moved and now[r].get("id") else None   # before it is put back
                 ok, kept = _put_back(cfg, r, base.get(r), now[r])
@@ -1081,6 +1134,53 @@ def _check(cfg, note, what, yes=None):
     return back, fail, held
 
 
+RUNNING_FOR = 1800      # a step's note counts as still running this long (or its background time, if longer)
+
+
+def _running_elsewhere(cfg, rel, full, note):
+    """The game's PC, 24 Nov 04:12 PT: a build session's Bash step (an edit plus a two-minute game check) was let change
+    a guard file; a second session's step ended meanwhile, its check judged the work copy, found the change and put it
+    back, blaming its own unrelated mv. A file another session's step is still running with leave to change (its box
+    yes covers it, or the guard gathered it or let it through free) is left for that step's own check (F545). Only
+    another session's step, for at most RUNNING_FOR: a refused step of this session never holds a file back."""
+    if BREAK("running_elsewhere"):
+        return False
+    me = str(((note or {}).get("data") or {}).get("session_id") or (note or {}).get("session") or "")
+    d = os.path.join(_dir(cfg), "pending")
+    try:
+        names = os.listdir(d)
+    except OSError:
+        return False
+    for n in names:
+        x = _read_json(os.path.join(d, n))
+        if not isinstance(x, dict) or not x.get("data"):
+            continue
+        who = str(x.get("session") or (x.get("data") or {}).get("session_id") or "")
+        start = x.get("start") or 0
+        if not who or who == me or time.time() - start > max(RUNNING_FOR, (x.get("until") or 0) - start):
+            continue
+        if rel in (x.get("gathered") or []) or full in (x.get("free") or []) or AB.Yes(x["data"], x).covers(full):
+            return True
+    return False
+
+
+def _waits_only(cfg, data):
+    """The game's PC, 25 Nov 23:26 UTC: a helper's step that only waited (bash Tools/Scripts/session_wait.sh ...) ran for
+    minutes; the owner pasted his own command meanwhile, and the check after the wait took his change as the helper's
+    and put it back. A step whose whole command is one of the owner's "wait_commands" (patterns, * for any words; no
+    ;, &&, |, > or $( outside quotes) is judged as the time between steps: the owner's own files stay, held for his
+    yes at the upload, and the kit's switches are still put back (F557)."""
+    import fnmatch
+    pats = [x for x in (cfg.get("wait_commands") or []) if isinstance(x, str) and x.strip()]
+    if not pats or BREAK("wait_commands") or data.get("tool_name") != "Bash":
+        return False
+    cmd = str((data.get("tool_input") or {}).get("command") or "").strip()
+    bare = re.sub(r"'[^']*'|\"(?:[^\"\\]|\\.)*\"", "", cmd)
+    if not cmd or re.search(r"[;&|<>`\n]|\$\(", bare):
+        return False
+    return any(fnmatch.fnmatchcase(cmd, x) for x in pats)
+
+
 def after(cfg, data, home=None):
     """The check after one step: the words for the helper (and the owner), or "" when nothing was put back."""
     if BREAK("steps_check"):
@@ -1102,7 +1202,11 @@ def after(cfg, data, home=None):
         if c is not cfg:
             c, sb, sf = _settled(c, note, what, yes, home)
             back += [name(r) for r in sb]; fail += [name(r) for r in sf]
-        b, f, h = _check(c, note, what, yes)
+        if _waits_only(cfg, data):                     # a wait the owner listed: judged as between steps (F557)
+            _between(c, str(data.get("session_id") or ""), None)
+            b, f, h = [], [], []
+        else:
+            b, f, h = _check(c, note, what, yes)
         gb, gf = _gs_check(c, note, what)
         gback += [x for x in gb if x not in gback]; gfail += [x for x in gf if x not in gfail]
         back += [name(r) for r, _ in b]; fail += [name(r) for r, _ in f]; held += [name(r) for r in h]
@@ -1205,14 +1309,30 @@ def _settled_told(cfg, st, ok, kept, what):
         _save(cfg, st)
 
 
-def _yes(cfg, yes, note, rel, full, base, now):
+def _yes(cfg, yes, note, rel, full, base, now, what=""):
     """Does this step's yes, or a free rule judged by what changed, keep this changed guard file?"""
-    if (yes is not None and yes.covers(full)) or _overlapping_yes(cfg, rel, full, base):
-        _box_yes(cfg, rel, now)
+    if yes is not None and yes.covers(full):
+        _box_yes(cfg, rel, now)                        # the step's own box (the overlapping edit's step records its own)
+        return True
+    if _overlapping_yes(cfg, rel, full, base, note):
         return True
     if BREAK("steps_free_state"):                      # before review 6: the note's own list of free files
         return bool(note) and full in note.get("free", [])
-    return _free_now(cfg, rel, base, now) or _github_holds(cfg, rel)
+    if _free_now(cfg, rel, base, now):
+        _free_told(cfg, rel, what)
+        return True
+    return _github_holds(cfg, rel)
+
+
+def _free_told(cfg, rel, what):
+    """The game's PC, 27 Nov: a helper's own script added a test to a test file; it was kept (only new tests), but no
+    line said so, and the owner couldn't tell what had happened. A direct edit is logged by the guard before it runs;
+    a change the guard couldn't read (a script, a program) is logged here."""
+    if BREAK("free_after_logged") or str(what or "").startswith(("Edit", "Write", "MultiEdit", "NotebookEdit")):
+        return
+    import catches as CL
+    CL.log(cfg, "added tests (no ask)", f"{rel}: kept, it only adds tests (written by a step the guard couldn't read "
+           f"before it ran: {str(what)[:160]})", what, "the check after every step")
 
 
 BOX_YES = "box_yes.json"
@@ -1243,16 +1363,23 @@ def box_yes(cfg):
         return {}
 
 
-def _overlapping_yes(cfg, rel, full, base):
+OVERLAP_S = 20     # parallel steps start within a second or two of each other; a No'd edit's later steps don't
+
+
+def _overlapping_yes(cfg, rel, full, base, note=None):
     """The game's PC, 22 Nov 21:52 UTC: the owner said yes to an edit of a guard file, and a helper's other step (a
     read-only check running beside it) ended first; its check after found the change and put it back, as that step had
     no yes. An editing step whose box the owner answered yes, whose own check hasn't run yet, keeps the file when the
+    two steps started together (within OVERLAP_S, as parallel steps do: a step the owner said No to leaves its note,
+    and a later step writing the same text is not covered by it, F542) and the
     file is now exactly what that edit makes of the accepted copy. Anything else that step's file holds is judged as
     before."""
     if BREAK("steps_overlap"):
         return False
     try:
-        yeses = [y for y in step_yeses(cfg) if y.data.get("tool_name") in AB.EDIT_TOOLS and y.covers(full)]
+        start = (note or {}).get("start") or 0
+        yeses = [y for y in step_yeses(cfg) if y.data.get("tool_name") in AB.EDIT_TOOLS and y.covers(full)
+                 and (BREAK("overlap_same_moment") or abs((y.note.get("start") or 0) - start) <= OVERLAP_S)]
         if not yeses:
             return False
         import adds as AD

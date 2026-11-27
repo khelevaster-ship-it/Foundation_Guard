@@ -64,6 +64,9 @@ DEFAULTS = {
                                          # at the upload, not a box (fg/review.py; the owner, 16 Nov)
     "run_copies": [],                    # other copies a scheduled run owns (the nightly's folder): left out of the checks
                                          # other sessions' steps make; a session in that folder still checks it (23 Nov)
+    "wait_commands": [],                 # e.g. ["bash Tools/Scripts/session_wait.sh *"]: such a step is judged as time between steps (F557)
+    "owner_ok_list_s": 8,                # the upload's owner-OK list gets this long in the guard, else the box asks without it (F555)
+    "size_check_before_yes_s": 8,        # the size check before the upload's yes box gets this long, else it is left to the gate (F539)
     "box_hours": "",                     # "07:00-23:00": inside these hours (the computer's clock) every guard change asks
                                          # in a box, even with review_lane or gather_asks on (the owner, 23 Nov)
     "review_command": None,              # the owner's reviewer program, as a list

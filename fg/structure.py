@@ -110,15 +110,19 @@ def strip_code(line, state, keep_strings=False):
     out, i, n = [], 0, len(line)
     fixed = not BRK("structure_fresh")
     while 0 <= i < n:
+        if fixed and not state[0]:
+            j = STRIP_PLAIN.match(line, i).end()      # 27 Nov: a run no comment or string can start in is copied at once
+            if j > i:
+                out.append(line[i:j]); i = j; continue
         i = _code_step(line, i, n, state, keep_strings, fixed, out)
     return "".join(out)
 
+STRIP_PLAIN = re.compile(r"[^\"'/]*")
+
 def _clean_for_blocks(lines, ext):
-    st, clean = [False], []
-    for ln in lines:
-        clean.append(strip_code(ln, st))
     if BRK("structure_round2"):
-        return clean
+        st = [False]
+        return [strip_code(ln, st) for ln in lines]
     clean = FN.clean_lines(lines, ext)               # also multi-line raw strings, template literals and #if 0 blocks
     pk = next((re.match(r"^\s*package\s+([\w.]+)\s*;", c) for c in clean if re.match(r"^\s*package\s+[\w.]+\s*;", c)), None)
     if pk and ext in (".java", ".kt"):               # a Java package names its classes like a namespace
@@ -240,10 +244,10 @@ ARROW = re.compile(r"^\s*(?:export\s+)?(?:default\s+)?(?:(?:const|let|var)\s+|(?
 NOT_FUNC = re.compile(r"^\s*(if|for|while|switch|catch|return|else|do|new|delete|throw|using|namespace|class|struct)\b")
 
 
-def functions_clike(lines, ext=""):
+def functions_clike(lines, ext="", checks=False):
     if os.environ.get("FG_BREAK", "") != "structure_round2":
         found, clean = FN.functions(lines, ext)
-        return [(nm, b - a + 1) + D.tangle_clike(clean, a, b) for nm, a, b in found]
+        return [(nm, b - a + 1) + D.tangle_clike(clean, a, b, checks) for nm, a, b in found]
     return functions_clike_v1(lines)
 
 
@@ -330,7 +334,7 @@ def py_block_end(lines, i, ind, ins):
     return j
 
 
-def functions_python(lines):
+def functions_python(lines, checks=False):
     out, ins = [], (py_in_string(lines) if not os.environ.get("FG_BREAK", "") == "structure_fresh" else [False] * len(lines))
     for i, ln in enumerate(lines):
         m = re.match(r"^(\s*)(?:async\s+)?def\s+([A-Za-z_]\w*)", ln)
@@ -344,7 +348,7 @@ def functions_python(lines):
                 if depth <= 0 and code.rstrip().endswith(":"):
                     sig = k; break
         j = py_block_end(lines, sig, len(m.group(1)), ins)
-        out.append((m.group(2), j - i) + D.tangle_python(lines, sig, j, head=i) + (D.tangle_python(lines, sig, j)[1],))
+        out.append((m.group(2), j - i) + D.tangle_python(lines, sig, j, head=i, checks=checks) + (D.tangle_python(lines, sig, j)[1],))
     return out
 
 
@@ -427,13 +431,13 @@ def _read_lines(cfg, p):
         return None
 
 
-def _shapes(lines, p, ext):
-    """(blocks, functions, is code?) of one file, by its language."""
+def _shapes(lines, p, ext, checks=False):
+    """(blocks, functions, is code?) of one file, by its language. checks: a test file (its check lines count less)."""
     gd = ext == ".gd" and not BRK("engine_gd")
     if ext in CLIKE:
-        return blocks_clike(lines, p, ext), functions_clike(lines, ext), True
+        return blocks_clike(lines, p, ext), functions_clike(lines, ext, checks), True
     if ext == ".py":
-        return [(a, b, "decl") for a, b in blocks_python(lines, p)], functions_python(lines), True
+        return [(a, b, "decl") for a, b in blocks_python(lines, p)], functions_python(lines, checks), True
     if gd:
         return [(a, b, "decl") for a, b in blocks_gd(lines, p)], functions_gd(lines), True
     return [], [], False
@@ -491,22 +495,79 @@ def _import_lines(raw):
     return out
 
 
-def measure(cfg, s):
+def _kit_print(s, cfg=None):
+    """What a cached measurement depends on besides the file itself: this kit's measuring code, the settings, the breaks."""
+    import hashlib
+    h = hashlib.sha1(os.environ.get("FG_BREAK", "").encode())
+    for m in (__file__, FN.__file__, D.__file__):
+        with open(m, "rb") as f:
+            h.update(f.read())
+    h.update(json.dumps({k: v for k, v in s.items() if not k.startswith("_")}, sort_keys=True, default=str).encode())
+    h.update(json.dumps((cfg or {}).get("test_files") or [], default=str).encode())       # which files are tests
+    return h.hexdigest()
+
+
+def _one_file(cfg, lines, p, s):
+    """[line count, blocks, functions, code lines or None, import lines, boundary import lines] of one file's text."""
+    imp = _imports_of(cfg, p, os.environ.get("FG_BREAK", ""), list(lines)) if s.get("boundaries") else []
+    n = len(lines) - (1 if lines and lines[-1] == "" and not BRK("structure_fresh") else 0)   # a final line break is not a line
+    lines, ext = _code_view(lines, os.path.splitext(p)[1].lower(), s)
+    import adds as AD
+    bl, fs, is_code = _shapes(lines, p, ext, AD.is_test_file(p, cfg))
+    code = D.code_lines(lines, ".py" if ext == ".gd" else ext, strip_code) if is_code else None
+    return [n, bl, fs, code, _import_lines({p: lines})[p], imp]
+
+
+def _cache_path(cfg):
+    g = C.git_dir(cfg["_root"])                       # this copy's own git folder (a worktree's .git is a file)
+    return os.path.join(g, "foundationguard", "size_cache.json") if g else None
+
+
+def _load_cache(cfg, kit):
+    try:
+        with open(_cache_path(cfg), encoding="utf-8") as f:
+            d = json.load(f)
+        return d["files"] if d.get("kit") == kit else {}
+    except (OSError, ValueError, KeyError, TypeError):
+        return {}
+
+
+def _save_cache(cfg, kit, got):
+    try:
+        path = _cache_path(cfg); os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path + ".tmp", "w", encoding="utf-8") as f:
+            json.dump({"kit": kit, "files": got}, f)
+        os.replace(path + ".tmp", path)
+    except OSError:
+        pass
+
+
+def measure(cfg, s, cached=False):
+    """cached=True (the box before an upload, which may only wait a few seconds) takes each unchanged file's
+    measurement from the last run (27 Nov: the game's 3,000 files took 77 s on its PC). The upload's own gate always
+    measures afresh, and leaves its measurements for the next box."""
+    import hashlib
     fl, fn, allb, raw, code, tg = {}, {}, [], {}, {}, {}
+    use = cached and not BRK("size_cache")
+    kit = _kit_print(s, cfg) if C.git_dir(cfg["_root"]) else None
+    old, got, imports = (_load_cache(cfg, kit) if use and kit else {}), {}, {}
     for p in files(cfg, s):
         lines = _read_lines(cfg, p)
         if lines is None:
             continue
-        fl[p] = len(lines) - (1 if lines and lines[-1] == "" and not BRK("structure_fresh") else 0)   # a final line break is not a line
-        lines, ext = _code_view(lines, os.path.splitext(p)[1].lower(), s)
-        bl, fs, is_code = _shapes(lines, p, ext)
-        raw[p] = lines
-        if is_code:
-            code[p] = D.code_lines(lines, ".py" if ext == ".gd" else ext, strip_code)
-        _note_functions(p, fs, s, tg, fn)
+        key = p + "\0" + hashlib.sha1("\n".join(lines).encode("utf-8", "surrogatepass")).hexdigest()
+        one = old.get(key) or _one_file(cfg, lines, p, s)
+        got[key] = one
+        fl[p], bl, fs, c, raw[p], imports[p] = one
+        if c is not None:
+            code[p] = [tuple(x) for x in c]
+        _note_functions(p, [tuple(f) for f in fs], s, tg, fn)
         allb.extend((name, k, kind, p) for name, k, kind in bl)
+    if kit and (not use or set(got) != set(old)):
+        _save_cache(cfg, kit, got)                    # unchanged since the last run: nothing to write
+    s["_imports"] = {p: [tuple(x) for x in v] for p, v in imports.items()} if s.get("boundaries") else {}
     cl = _classes(allb, s)
-    edges = D.dependencies(_import_lines(raw), s)
+    edges = D.dependencies(raw, s)
     s["_design"] = {"tangle": tg, "dups": D.duplicates(code, s["min_duplicate_lines"]), "edges": edges, "cycles": D.cycles(edges)}
     return fl, cl, fn
 
@@ -647,19 +708,28 @@ def _join_imports(rawl, brk):
     return joined
 
 
-def _boundary_lines(cfg, p, brk):
-    rawl = open(os.path.join(cfg["_root"], p), encoding="utf-8", errors="replace").read().split("\n")
+def _boundary_lines(cfg, p, brk, rawl=None):
+    if rawl is None:
+        rawl = open(os.path.join(cfg["_root"], p), encoding="utf-8", errors="replace").read().split("\n")
     if brk != "structure_round2":
         cln = FN.clean_lines(rawl, os.path.splitext(p)[1].lower())
         rawl = ["" if not c.strip() else r for r, c in zip(rawl, cln)]   # comments and #if 0 blocks
     return _join_imports(rawl, brk)
 
 
-def _boundary_file(cfg, p, rule, brk, bad):
-    st, py = [False], p.endswith(".py")
-    for i, raw, last in _boundary_lines(cfg, p, brk):
+def _imports_of(cfg, p, brk, rawl=None):
+    """[(line number, include/import line)] of one file, as the boundary rules read it."""
+    st, py, out = [False], p.endswith(".py"), []
+    for i, raw, last in _boundary_lines(cfg, p, brk, rawl):
         ln = raw if brk == "structure_fresh" else (re.sub(r"\s#.*$", "", raw) if py else strip_code(raw.rstrip("\n"), st, keep_strings=True))
-        if IMPORT.match(ln) and any(re.search(x, ln) for x in rule["may_not_use"]):
+        if IMPORT.match(ln):
+            out.append((i, ln))
+    return out
+
+
+def _boundary_file(cfg, p, rule, brk, bad, known=None):
+    for i, ln in (known if known is not None else _imports_of(cfg, p, brk)):
+        if any(re.search(x, ln) for x in rule["may_not_use"]):
             bad.append(f"{p}:{i}: reaches past a boundary ({ln.strip()[:80]}): {rule.get('why', '')}")
 
 
@@ -668,7 +738,7 @@ def _boundary_check(cfg, fl, s, brk, bad):
         globs = rule["files"] if isinstance(rule["files"], list) else [rule["files"]]
         skip = [] if brk == "boundary_exclude" else list(rule.get("exclude") or [])   # the game's N23, 16 Nov: one rule
         for p in (p for p in fl if match(p, globs) and not match(p, skip)):           # with its hub file left out
-            _boundary_file(cfg, p, rule, brk, bad)
+            _boundary_file(cfg, p, rule, brk, bad, (s.get("_imports") or {}).get(p))
 
 
 def _lines_at(root, ref, p):
@@ -681,19 +751,43 @@ def _lines_at(root, ref, p):
     return len(old.stdout.split(b"\n")) if old.returncode == 0 else 0
 
 
+def _counts_at(root, ref, paths):
+    """{path: line count at ref} for many files in one git call (27 Nov: one git show per file took 2 s of the game
+    PC's size check); a file that wasn't there is left out. None when git can't do it, so each is read on its own."""
+    if BRK("growth_batch") or not paths:
+        return None
+    try:
+        q = subprocess.run(["git", "cat-file", "--batch"], cwd=root, capture_output=True, timeout=60,
+                           input="".join(f"{ref}:{p}\n" for p in paths).encode("utf-8", "surrogateescape"))
+    except (OSError, subprocess.SubprocessError):
+        return None
+    out, data, i = {}, q.stdout, 0
+    for p in paths:
+        j = data.find(b"\n", i)
+        if q.returncode != 0 or j < 0:
+            return None
+        head = data[i:j].split(); i = j + 1
+        if len(head) == 3 and head[1] == b"blob":
+            k = int(head[2]); out[p] = len(data[i:i + k].split(b"\n")); i += k + 1
+        elif len(head) != 2 or head[1] != b"missing":
+            return None                                   # something else came back: read each file the old way
+    return out
+
+
 def _growth_check(cfg, fl, s, bad, warn):
     if git("rev-parse", "--verify", "-q", s["base_ref"], cwd=cfg["_root"]).returncode != 0:
         return
+    at = _counts_at(cfg["_root"], s["base_ref"], list(fl))
     for p, n in fl.items():
-        was = _lines_at(cfg["_root"], s["base_ref"], p)
+        was = _lines_at(cfg["_root"], s["base_ref"], p) if at is None else at.get(p, 0)
         if n - was > s["max_growth_lines"]:
             (bad if s["growth_blocks"] else warn).append(f"{p}: grew {n - was} lines since {s['base_ref']} (alarm at {s['max_growth_lines']})")
 
 
-def check(cfg):
+def check(cfg, cached=False):
     s = dict(DEFAULTS); s.update(cfg.get("structure") or {})
     brk = os.environ.get("FG_BREAK", "")
-    fl, cl, fn = measure(cfg, s); base = load_baseline(cfg, s); bad, warn = [], []
+    fl, cl, fn = measure(cfg, s, cached); base = load_baseline(cfg, s); bad, warn = [], []
     _function_check(fn, base, s, brk, bad)
     _file_check(fl, base, s, brk, bad)
     _class_check(cl, base, s, brk, bad)
@@ -705,19 +799,31 @@ def check(cfg):
     return not bad, "\n".join(rep)
 
 
-def _ratchet_sizes(old, of, oc, ofn):
+def _was(k, recorded, now):
+    """A recorded entry for k: its own, or the one a function that moved file brings with it (F518). The game's PC,
+    24 Nov: the check followed moved functions but the ratchet kept only exact names, so a ratchet after a split dropped
+    54 entries and the next check failed 44 tangled functions (F543)."""
+    if k in recorded:
+        return recorded[k]
+    return None if BREAK_S("ratchet_follows_moves") else _followed(k, recorded, now)
+
+
+def _ratchet_sizes(old, of, oc, ofn, fn=None):
     """Tighten: keep only what was already recorded, at the smaller of old and new."""
     of = {p: min(n, old["files"][p]) for p, n in of.items() if p in old["files"]}
     oc = {k: {"lines": min(v["lines"], old["classes"][k]["lines"]), "files": min(v["files"], old["classes"][k]["files"])}
           for k, v in oc.items() if k in old["classes"]}
-    ofn = {k: min(n, old.get("functions", {})[k]) for k, n in ofn.items() if k in old.get("functions", {})}
+    ofo, now = old.get("functions", {}), (fn if fn is not None else ofn)
+    ofn = {k: min(n, w) for k, n in ofn.items() for w in [_was(k, ofo, now)] if w is not None}
     return of, oc, ofn
 
 
 def _ratchet_design(old, db):
     ot, od = old.get("tangle", {}), old.get("duplicates", {})
     same = old.get("nesting", 1 if ot else NESTING) == NESTING      # counted the old way: take today's count, once
-    db["tangle"] = {k: [min(v[0], ot[k][0]), min(v[1], ot[k][1]) if same else v[1]] for k, v in db["tangle"].items() if k in ot}
+    now = db["tangle"]
+    db["tangle"] = {k: [min(v[0], w[0]), min(v[1], w[1]) if same else v[1]]
+                    for k, v in now.items() for w in [_was(k, ot, now)] if w is not None}
     db["duplicates"] = {k: min(v, od[k]) for k, v in db["duplicates"].items() if k in od}
     db["cycles"] = [c for c in db["cycles"] if any(set(c) <= set(b) for b in old.get("cycles", []))]
     return db
@@ -728,8 +834,20 @@ def write_baseline(cfg, s, fl, cl, fn, reason, ratchet):
     db = design_baseline(s)
     if ratchet:
         old = load_baseline(cfg, s)
-        of, oc, ofn = _ratchet_sizes(old, of, oc, ofn)
+        of, oc, ofn = _ratchet_sizes(old, of, oc, ofn, fn)
         db = _ratchet_design(old, db)
+        n = lambda b: sum(len(b.get(x) or {}) for x in ("files", "classes", "functions", "tangle", "duplicates"))
+        kept, was = n({"files": of, "classes": oc, "functions": ofn, **db}), n(old)
+        line = (f"baseline tightened: {kept} entries kept, {was - kept} dropped (fixed, or no longer found). "
+                f"Reason: {reason or 'ratchet'}")
+        if not BREAK_S("ratchet_logged"):
+            with open(os.path.join(cfg["_root"], "STRUCTURE_LOG.md"), "a", encoding="utf-8") as f:
+                f.write(f"- {datetime.date.today()}: {line}\n")
+            try:
+                import catches as CL
+                CL.log(cfg, "structure ratchet", line, "fg/structure.py --ratchet", "the size and design baseline only tightens")
+            except Exception:
+                pass
     json.dump({"files": of, "classes": oc, "functions": ofn, **db}, open(baseline_path(cfg, s), "w", encoding="utf-8"), indent=1, sort_keys=True)
     if not ratchet:
         with open(os.path.join(cfg["_root"], "STRUCTURE_LOG.md"), "a", encoding="utf-8") as f:

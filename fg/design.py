@@ -261,11 +261,29 @@ DECIDE_C = re.compile(r"\b(if|for|foreach|while|case|catch)\b|&&|\|\||\?(?![?.:]
 DECIDE_PY = re.compile(r"\b(if|elif|for|while|except|and|or|case)\b")
 
 
-def tangle_clike(clean, start, end):
-    """(complexity, max nesting) for a C-like function whose body is clean[start..end] (comment/string-free lines)."""
+# In a test file, a line that is a check (TestTrue, EXPECT_EQ, assert ...) holds the check's own condition: its ifs, ands,
+# ors and ?s are what is being checked, not choices the code makes, so only its loops count (the game's PC, 27 Nov:
+# test functions that are lists of checks failed "too many choices"). Game code is counted as before.
+CHECK_C = re.compile(r"\b(?:Test(?:True|False|Equal|NotEqual|Null|NotNull|Valid|Invalid|Same|NotSame|Nearly\w*|"
+                     r"Greater\w*|Less\w*)|(?:UE_)?(?:EXPECT|ASSERT|CHECK|REQUIRE|STATIC_REQUIRE)(?:_\w+)?|"
+                     r"Assert\.\w+|assert\w*|expect|check\w*|verify\w*)\s*\(")
+CHECK_PY = re.compile(r"^\s*assert\b|\b(?:self\.)?assert\w*\s*\(|\b(?:check|expect|verify)\w*\s*\(")
+LOOP_C = re.compile(r"\b(for|foreach|while|catch)\b")
+LOOP_PY = re.compile(r"\b(for|while|except)\b")
+
+
+def _decisions(ln, checks, check, decide, loop):
+    if checks and check.search(ln) and not BREAK("test_checks_count"):
+        return len(loop.findall(ln))
+    return len(decide.findall(ln))
+
+
+def tangle_clike(clean, start, end, checks=False):
+    """(complexity, max nesting) for a C-like function whose body is clean[start..end] (comment/string-free lines).
+    checks: the function is in a test file (see CHECK_C)."""
     cx, depth, deepest, base = 1, 0, 0, None
     for ln in clean[start:end + 1]:
-        cx += len(DECIDE_C.findall(re.sub(r"\belse\s+if\b", "if", ln)))
+        cx += _decisions(re.sub(r"\belse\s+if\b", "if", ln), checks, CHECK_C, DECIDE_C, LOOP_C)
         for ch in ln:
             if ch == "{":
                 depth += 1
@@ -276,15 +294,16 @@ def tangle_clike(clean, start, end):
     return cx, deepest
 
 
-def tangle_python(lines, start, end, head=None):
-    """(complexity, max nesting) for a Python or GDScript function; head: the Python def line, for its syntax tree."""
+def tangle_python(lines, start, end, head=None, checks=False):
+    """(complexity, max nesting) for a Python or GDScript function; head: the Python def line, for its syntax tree.
+    checks: the function is in a test file (see CHECK_PY)."""
     body = [l for l in lines[start + 1:end] if l.strip() and not l.strip().startswith("#")]
     if not body: return 1, 0
     deep = None if BREAK("design_nesting_lines") or head is None else _py_nesting(lines[head:end])
     if deep is not None:
-        cx, _ = _tangle_python_lines(body)
+        cx, _ = _tangle_python_lines(body, checks)
         return cx, deep
-    return _tangle_python_lines(body)
+    return _tangle_python_lines(body, checks)
 
 
 BLOCKS = ("For", "AsyncFor", "While", "If", "With", "AsyncWith", "Try", "TryStar", "Match")
@@ -321,11 +340,11 @@ def _py_nesting(src_lines):
     return walk(fn.body, 0)
 
 
-def _tangle_python_lines(body):
+def _tangle_python_lines(body, checks=False):
     ind0 = min(len(l) - len(l.lstrip()) for l in body); unit = None; deepest = 0; cx = 1
     for l in body:
         code = re.sub(r"(['\"])(?:\\.|(?!\1).)*\1", '""', l); code = re.sub(r"#.*$", "", code)
-        cx += len(DECIDE_PY.findall(code))
+        cx += _decisions(code, checks, CHECK_PY, DECIDE_PY, LOOP_PY)
         d = len(l) - len(l.lstrip()) - ind0
         if d > 0 and unit is None: unit = d
         if unit: deepest = max(deepest, d // unit)

@@ -192,6 +192,30 @@ def test_a_recorded_function_keeps_its_entry_when_it_moves_file(tmp_path):
     assert p.returncode == 1 and "APawn::Other" in p.stdout and "TickFlight" not in p.stdout, p.stdout
 
 
+def test_the_ratchet_keeps_a_moved_functions_entry_and_says_what_it_did(tmp_path):
+    # F543 and F544 (the game's PC, 24 Nov 10:07 UTC): after a split moved functions to new files, --ratchet kept only
+    # exact names, dropped 54 entries, and the next check failed 44 tangled functions; and it left no line saying so
+    r = repo(tmp_path, extra={"structure": {"include": ["**/*.cpp"], "max_function_lines": 40, "max_complexity": 5, "base_ref": "none"}})
+    huge = lambda name, n=50: f"int {name}(int a) {{\n" + "  if (a > 1) { a += 1; }\n" * n + "  return a;\n}\n"
+    (r / "pawn.cpp").write_text("void Small(int a)\n{\n  a++;\n}\n\n" + huge("APawn::TickFlight") + huge("APawn::Gone"))
+    _commit(r)
+    sh(f'{PY} {FG}/structure.py --baseline "as it stands"', r); _commit(r, "recorded")
+    (r / "pawn.cpp").write_text("void Small(int a)\n{\n  a++;\n}\n")
+    (r / "flight.cpp").write_text(huge("APawn::TickFlight", 45)); _commit(r, "moved and smaller; Gone fixed")
+    assert sh(f"{PY} {FG}/structure.py", r).returncode == 0
+    p = sh(f"{PY} {FG}/structure.py --ratchet", r)
+    assert p.returncode == 0, p.stdout
+    p = sh(f"{PY} {FG}/structure.py", r)
+    assert p.returncode == 0, "PROOF: the ratchet dropped a moved function's entry: " + p.stdout
+    base = json.loads((r / "structure_baseline.json").read_text())
+    assert any("TickFlight" in k for k in base["functions"]) and not any("Gone" in k for k in base["functions"]), base
+    (r / "flight.cpp").write_text(huge("APawn::TickFlight", 60)); _commit(r, "grown past the tightened size")
+    assert sh(f"{PY} {FG}/structure.py", r).returncode == 1                 # still only shrinks: tightened to 45
+    logs = (r / "STRUCTURE_LOG.md").read_text() + "".join(f.read_text() for f in r.glob(".foundationguard/catches*.log"))
+    assert "baseline tightened" in logs and "dropped" in logs, "PROOF: the ratchet rewrote the baseline and said nothing: " + logs
+    assert "structure ratchet" in (r / ".foundationguard" / "catches.log").read_text()
+
+
 def test_structure_names_classes_by_namespace(tmp_path):
     # Six modules each with their own State/Params/Books, std::hash specialisations, an anonymous-namespace helper, and
     # methods written after "using namespace": none of these are one class smeared over files. A real smeared class still fails.
@@ -959,6 +983,20 @@ def test_tiny_file_rise(tmp_path):
     _write(r, {f"src/t{i}.py": "a = 1\nb = 2\n" for i in range(8)}); _commit(r)
     p = sh(f"{PY} {FG}/push.py", r)
     assert p.returncode == 1 and "TINY FAIL" in p.stdout, p.stdout
+
+def test_the_quick_checks_stop_an_upload_before_the_tests_run(tmp_path):
+    # F556 (the game's PC, 26 Nov): the owner waited through the 6-minute test run, and then the tiny-file check stopped
+    # the upload; the checks that read only the code now run first
+    r = repo(tmp_path, gate="echo ran >> tests_ran.txt", extra={"structure": {"include": ["src/**"], "exclude": []}})
+    _write(r, {".gitignore": ".foundationguard/\ntests_ran.txt\n", "src/big.py": "\n".join(f"x{i} = {i}" for i in range(300)) + "\n"})
+    _commit(r)
+    assert sh(f"{PY} {FG}/push.py", r).returncode == 0 and (r / "tests_ran.txt").exists(), "first record"
+    (r / "tests_ran.txt").unlink()
+    _write(r, {f"src/t{i}.py": "a = 1\nb = 2\n" for i in range(8)}); _commit(r)
+    p = sh(f"{PY} {FG}/push.py", r)
+    assert p.returncode == 1 and "TINY FAIL" in p.stdout, p.stdout
+    assert not (r / "tests_ran.txt").exists(), "PROOF: the tests ran before a quick check stopped the upload: " + p.stdout[-400:]
+
 
 def test_break_glass_asks_and_is_logged(tmp_path):
     r = repo(tmp_path, gate="false")
@@ -4177,12 +4215,15 @@ def test_a_cd_after_a_cd_into_a_variable_doesnt_crash_the_guard(tmp_path):
 
 
 # ---------- the check after every step (the owner, 12 Nov, after outside review 4: check what changed, not what was typed)
+_STEP_IDS = iter(range(10 ** 9))   # Windows' clock can give two steps the same time_ns
+
+
 def _helper_step(r, tool, ti, run=None, env=None, sid="s1"):
     """One helper step as Claude Code runs it: the guard before, the step itself when it is let through (an ask is taken
     as the owner's yes), then the check after. ("allow" | "ask" | "block", what the check after said)."""
     import time
     e = dict(os.environ); e.update(env or {})
-    data = json.dumps({"tool_name": tool, "tool_input": ti, "cwd": str(r), "tool_use_id": "toolu_%d" % time.time_ns(),
+    data = json.dumps({"tool_name": tool, "tool_input": ti, "cwd": str(r), "tool_use_id": "toolu_%d_%d" % (time.time_ns(), next(_STEP_IDS)),
                        "session_id": sid})
     pre = subprocess.run([PY, os.path.join(FG, "guard.py")], input=data, capture_output=True, text=True, env=e)
     if pre.returncode == 2:
@@ -7256,10 +7297,30 @@ def test_a_greater_than_sign_inside_quoted_text_is_not_a_redirect(tmp_path):
         assert '"ask"' not in ask(c), "PROOF: a > inside quoted search text was read as a redirect: " + c
     # ... a real redirect still counts, and so does one inside quotes that a shell runs
     for c in ('echo x >My[A-Z][A-Za-z]*', 'echo "x" > "MyGame.uproject"', 'grep -n "a->b" Source/a.cpp > MyGame.uproject',
-              'grep -rn "PC->My" Source >My[A-Z][A-Za-z]*', "rg 'x > y' Source 2>&1 >MyGame.uproject", 'echo "$(echo x >My[A-Z][A-Za-z]*)"',
+              'grep -rn "PC->God" Source >My[A-Z][A-Za-z]*', "rg 'x > y' Source 2>&1 >MyGame.uproject", 'echo "$(echo x >My[A-Z][A-Za-z]*)"',
               'bash -c "echo x >My[A-Z][A-Za-z]*"', "sh -c 'echo x >My[A-Z][A-Za-z]*'", 'eval "echo x >My[A-Z][A-Za-z]*"',
               'find . -name a.cpp -exec sh -c "echo y >My[A-Z][A-Za-z]*" \\;', 'echo \'echo x > MyGame.uproject\' | bash'):
         assert '"ask"' in ask(c), c
+
+
+def test_a_write_word_in_quoted_prose_does_not_make_another_argument_a_write(tmp_path):
+    # F538 (the game's PC, 23 Nov 20:02 UTC): bash Tools/Scripts/session_wait.sh 90 "the kit install (x.bat) or the
+    # rotation" "! git diff --quiet -- fg/" asked the owner whether the helper changes fg/: "install" in the quoted
+    # reason text was taken for a write, and fg/ was named in the other, read-only argument
+    r = repo(tmp_path)
+    ask = lambda c: hook("Bash", {"command": c}, r).stdout
+    for c in ('bash Tools/Scripts/session_wait.sh 90 "the kit install (install_kit_ec5a176.bat) or the rotation" "! git diff --quiet -- fg/"',
+              "bash Tools/Scripts/wait.sh 90 'the owner can now rm the old copy' '! git -C . diff --quiet -- fg/'"):
+        o = ask(c)
+        assert '"ask"' not in o and "blocked" not in o, "PROOF: a write word in quoted prose made fg/ count as written: " + c
+    # ... a quoted argument that is (or may be) a command still counts, and so does any write outside the quotes
+    for c in ('bash -c "install -m 644 x fg/guard.py"', "sh -c 'cp a fg/guard.py'", 'bash -c "cd fg && rm guard.py"',
+              './tool "install" fg/guard.py', 'bash x.sh "go; rm it" fg/guard.py', 'bash x.sh "a (rm it)" fg/guard.py',
+              'pwsh -Command "Remove-Item fg/guard.py"', 'echo "we install things" > fg/guard.py',
+              'bash x.sh "copy then rm $1" fg/guard.py', 'cp "a b" fg/guard.py', 'eval "now rm" fg/guard.py',
+              'echo "the kit install" | xargs -I{} cp {} fg/guard.py', 'bash x.sh "now cp it" "fg/guard.py" && rm fg/guard.py'):
+        o = ask(c)
+        assert '"ask"' in o or "blocked" in o, c
 
 
 def test_a_gathered_change_says_no_box_is_open(tmp_path):
@@ -7337,6 +7398,53 @@ def test_the_size_check_runs_before_the_upload_asks_the_owners_yes(tmp_path):
         "PROOF: the upload asked the owner's yes though the size check would stop it after: " + h.stdout + h.stderr
 
 
+def test_a_slow_size_check_is_skipped_before_the_yes_with_a_note(tmp_path):
+    # F539 (the game's PC, 23 Nov 20:55 UTC): the size check took over 100 s on the game's repo, past the AI tool's 20 s
+    # limit for the guard, so the guard failed safe and blocked every upload that needed the owner's yes
+    r = _ok_repo(tmp_path)
+    cfg = json.loads((r / "foundationguard.json").read_text()); cfg["secret_scan"] = False; cfg["push_command"] = "bash Tools/up.sh"
+    cfg["structure"] = {"include": ["src/*.py"], "max_file_lines": 20}; cfg["size_check_before_yes_s"] = 0
+    _write(r, {"src/big.py": "x = 1\n" * 30}); (r / "foundationguard.json").write_text(json.dumps(cfg)); _commit(r, "big")
+    assert sh(f"{PY} {FG}/structure.py --baseline --reason first", r).returncode == 0
+    _write(r, {"src/big.py": "x = 1\n" * 50}); _commit(r, "grow")
+    h = subprocess.run([PY, os.path.join(FG, "guard.py")], capture_output=True, text=True,
+                       input=json.dumps({"tool_name": "Bash", "tool_input": {"command": "bash Tools/up.sh"}, "cwd": str(r)}))
+    assert "YOUR YES TO A CHANGED GUARD" in h.stdout and "size check was not run before this box" in h.stdout, \
+        "PROOF: a size check slower than its time limit held up the upload's box: " + h.stdout + h.stderr
+
+
+def test_the_owner_ok_list_reads_a_big_upload_in_a_few_git_calls(tmp_path, monkeypatch):
+    # F554 (the game's PC, 26 Nov): after a merge of 38 test files the owner-OK list made about three git calls a file,
+    # past the AI tool's 20 s limit for the guard on Windows, and the upload was blocked
+    r = _tests_repo(tmp_path, review_lane=True)
+    for i in range(40):
+        _write(r, {f"tests/test_n{i}.py": "def test_n%d():\n    assert %d == %d\n" % (i, i, i)})
+    t = r / "tests" / "test_a.py"; t.write_text(t.read_text().replace("x == 5", "x >= 0")); _commit(r, "a big merge")
+    import importlib, sys as _s
+    _s.path.insert(0, FG); C = importlib.import_module("config"); OK = importlib.import_module("ownerok"); OK._BLOBS.clear()
+    calls, real = [0], subprocess.run
+    def counting(*a, **k):
+        calls[0] += 1
+        return real(*a, **k)
+    monkeypatch.setattr(subprocess, "run", counting); monkeypatch.chdir(r)
+    todo = OK.missing(C.load(str(r)))
+    assert [f for f, _, _ in todo] == ["tests/test_a.py"], todo
+    assert calls[0] <= 25, "PROOF: the owner-OK list made %d git calls for 41 changed files" % calls[0]
+
+
+def test_an_owner_ok_list_out_of_time_asks_instead_of_blocking(tmp_path):
+    # F555 (the game's PC, 26 Nov): the guard ran out of time making the owner-OK list and failed safe, blocking the
+    # upload; the box now asks, and says the list wasn't made
+    r = _ok_repo(tmp_path)
+    cfg = json.loads((r / "foundationguard.json").read_text()); cfg["secret_scan"] = False; cfg["push_command"] = "bash Tools/up.sh"
+    cfg["owner_ok_list_s"] = 0; (r / "foundationguard.json").write_text(json.dumps(cfg)); _commit(r, "settings")
+    t = r / "tests" / "test_a.py"; t.write_text("def test_a():\n    assert True\n"); _commit(r, "weaker")
+    h = subprocess.run([PY, os.path.join(FG, "guard.py")], capture_output=True, text=True,
+                       input=json.dumps({"tool_name": "Bash", "tool_input": {"command": "bash Tools/up.sh"}, "cwd": str(r)}))
+    assert h.returncode != 2 and "couldn't list this upload's guard changes in time" in h.stdout, \
+        "PROOF: an owner-OK list out of time did not open the box: " + h.stdout + h.stderr
+
+
 def test_a_helper_file_in_a_tests_folder_says_why_it_asks(tmp_path):
     # F527 (the game's PC, 21 Nov 19:40 UTC): a new file of helpers under Private/Tests/ was told to the owner as "it is
     # not a test file", which read as wrong; the box now says what the kit sees
@@ -7345,6 +7453,83 @@ def test_a_helper_file_in_a_tests_folder_says_why_it_asks(tmp_path):
     why = AD.only_adds("Source/Private/Tests/TightenedChecks.cpp", "", "bool Helper() { return true; }\n", {})
     assert "name doesn't mark it as a test file" in why and "not a test file" not in why, \
         "PROOF: the box told the owner a file in a tests folder is not a test file: " + why
+
+
+UE_NEW = '#include "Misc/AutomationTest.h"\n#if WITH_DEV_AUTOMATION_TESTS\nnamespace MyTribeWide {\n  struct FPlace { const TCHAR* Name; double Lat; uint64 Recorded; };\n  const FPlace Places[] = {\n    { TEXT("flat"), 0.0, 0ull },\n    { TEXT("round"), -32.2, 0ull },\n  };\n}\nIMPLEMENT_SIMPLE_AUTOMATION_TEST(FWidePinned, "MyGame.Sim.WidePinned", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)\nbool FWidePinned::RunTest(const FString& Parameters)\n{\n  for (const auto& P : MyTribeWide::Places) { if (P.Recorded) { TestEqual(P.Name, Run(P), P.Recorded); } }\n  return true;\n}\n#endif\n'
+PY_OLD = 'import sys\n\ndef main():\n    failed = 0\n    failed += lane_cases("x")\n    return failed\n\ndef lane_cases(p):\n    return 0\n\nif __name__ == "__main__":\n    sys.exit(main())\n'
+PY_NEW = 'import sys\n\ndef main():\n    failed = 0\n    failed += lane_cases("x")\n    failed += trailer_cases()\n    return failed\n\ndef lane_cases(p):\n    return 0\n\ndef trailer_cases():\n    """8. a model name is refused."""\n    bad = 0\n    if run("x") != 2:\n        bad += 1\n    return bad\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'
+SH_OLD = '#!/bin/bash\nFAIL=0\nwhile read -r N; do\n  if [ -n "$N" ]; then\n    echo "repeat ok"\n  fi\ndone <<< "$SITES"\nexit $FAIL\n'
+SH_NEW = '#!/bin/bash\nFAIL=0\nwhile read -r N; do\n  if [ -n "$N" ]; then\n    echo "repeat ok"\n  fi\n  PIN="$WT/testdata/$N.txt"\n  if [ "$RECORD" = "1" ]; then\n    cp "$WT/Saved/${N}_1.txt" "$PIN"; echo "recorded"\n  elif [ ! -f "$PIN" ]; then\n    FAIL=1; echo "no pin" | tee -a "$RES"\n  elif cmp -s "$WT/Saved/${N}_1.txt" "$PIN"; then\n    echo "same" | tee -a "$RES"\n  else\n    FAIL=1; echo "DIFFERS" | tee -a "$RES"\n  fi\ndone <<< "$SITES"\nexit $FAIL\n'
+
+
+def _adds_mod():
+    import importlib, sys as _s
+    _s.path.insert(0, FG)
+    return importlib.import_module("adds")
+
+
+def test_a_floor_raised_in_its_own_file_needs_no_box(tmp_path):
+    # F547 (the owner, 24 Nov 15:42 UTC, "Yes, kit change": let added checks and test-floor raises through without a
+    # box): Data/Benchmark/quick_tier_floor.txt, one number, went from 565 to 569 and asked the owner
+    r = _tests_repo(tmp_path, guard_paths=["tests/**", "Data/**"])
+    _write(r, {"Data/Benchmark/quick_tier_floor.txt": "565\n", "Data/max_seconds.txt": "30\n"}); _commit(r, "numbers")
+    f = r / "Data" / "Benchmark" / "quick_tier_floor.txt"
+    up = _edit_hook(r, "Edit", {"file_path": str(f), "old_string": "565", "new_string": "569"})
+    assert ASKED not in up, "PROOF: raising a floor in its own file asked the owner: " + up
+    assert ASKED in _edit_hook(r, "Edit", {"file_path": str(f), "old_string": "565", "new_string": "560"})   # lowered
+    cap = r / "Data" / "max_seconds.txt"
+    assert ASKED not in _edit_hook(r, "Edit", {"file_path": str(cap), "old_string": "30", "new_string": "25"})
+    assert ASKED in _edit_hook(r, "Edit", {"file_path": str(cap), "old_string": "30", "new_string": "45"})
+    AD = _adds_mod()
+    assert AD.only_adds("Data/count.txt", "3\n", "4\n", {}) is not None                 # a number that names neither
+
+
+def test_a_recorded_value_written_where_it_was_0_needs_no_box(tmp_path):
+    # F548 (the owner, 24 Nov): the recorded uint64 of each new place in MyGameTribeWideTests.cpp was filled in by
+    # later edits, where it was 0, and each asked the owner
+    AD = _adds_mod()
+    path = "Source/Game/Private/Tests/GameTribeWideTests.cpp"
+    old = UE_NEW
+    new = old.replace("0.0, 0ull", "0.0, 0x82e330c3fa531dddull")
+    assert AD.only_adds(path, old, new, {}) is None, "PROOF: a recorded value written where it was 0 asked the owner"
+    assert AD.only_adds(path, new, new.replace("0x82e330c3fa531dddull", "0x1ull", 1), {}) is not None   # changed
+    assert AD.only_adds(path, "x\nTestEqual(TEXT(\"n\"), N, 0);\n", "x\nTestEqual(TEXT(\"n\"), N, 5);\n", {}) is not None
+
+
+def test_a_new_case_counted_in_the_total_needs_no_box(tmp_path):
+    # F549 (the owner, 24 Nov): Tools/Scripts/test_guard_hook.py gained case 8, a new function and one
+    # "failed += trailer_cases()" line beside the others, and asked the owner
+    AD = _adds_mod()
+    path = "Tools/Scripts/test_guard_hook.py"
+    assert AD.only_adds(path, PY_OLD, PY_NEW, {}) is None, "PROOF: a new case counted in the total asked the owner"
+    more_of_old = PY_OLD.replace('    failed += lane_cases("x")\n', '    failed += lane_cases("x")\n    failed += lane_cases("y")\n')
+    assert AD.only_adds(path, PY_OLD, more_of_old, {}) is not None                       # not a new case
+    assert AD.only_adds(path, PY_NEW, PY_NEW.replace("    return failed", "    failed = 0\n    return failed"), {}) is not None
+
+
+def test_a_new_check_block_in_a_shell_check_script_needs_no_box(tmp_path):
+    # F550 (the owner, 24 Nov): Tools/Scripts/hand_pins_check.sh gained a 22-line block comparing each site's stream
+    # with its stored pin, purely additive, and asked the owner
+    AD = _adds_mod()
+    path = "Tools/Scripts/hand_pins_check.sh"
+    assert AD.only_adds(path, SH_OLD, SH_NEW, {}) is None, "PROOF: a new check block in a shell check script asked the owner"
+    end = lambda extra: SH_OLD.replace("  fi\ndone", "  fi\n" + extra + "\ndone")
+    for bad in ("  FAIL=0", "  exit 0", '  cp a "$SITES"', "  [ -f x ] || true", "  cd /tmp", "  source x.sh",
+                "  if [ 1 ]; then", "  eval \"$X\"", '  echo x > "$SITES"'):
+        assert AD.only_adds(path, SH_OLD, end(bad), {}) is not None, bad
+    rec = SH_OLD.replace("FAIL=0\n", 'FAIL=0\n[ "$RECORD" = 1 ] && echo r\n')
+    assert AD.only_adds(path, rec, rec.replace("  fi\ndone", "  fi\n  RECORD=1\ndone"), {}) is not None   # not its fail flag
+    assert AD.only_adds(path, SH_OLD, SH_OLD.replace("exit $FAIL", "exit 0"), {}) is not None        # a changed line
+
+
+def test_a_new_pin_file_needs_no_box_and_a_rewrite_still_asks(tmp_path):
+    # F551 (the owner, 24 Nov): new pin files (testdata/hand_pins/<site>.txt, one line per command) only add what a
+    # check compares with; rewriting one can change what it accepts, so that still asks
+    AD = _adds_mod()
+    pin = "Tools/Scripts/testdata/hand_pins/home.txt"
+    assert AD.only_adds(pin, "", "1 a ff\n", {}) is None, "PROOF: a new pin file asked the owner"
+    assert AD.only_adds(pin, "1 a ff\n", "1 a fe\n", {}) is not None
+    assert AD.only_adds("Tools/Scripts/notes/home.txt", "", "1 a ff\n", {}) is not None   # not a records folder
 
 
 def test_the_box_shows_where_a_long_line_changed(tmp_path):
@@ -7403,6 +7588,25 @@ def test_an_edit_the_owner_said_yes_to_stays_when_another_step_ends_first(tmp_pa
     assert t.read_text() == was and "PUT BACK" in out, out
 
 
+def test_an_edit_the_owner_said_no_to_does_not_keep_the_same_text_written_later(tmp_path):
+    # F542 (found on the way, 23 Nov, from F540's run): an edit the owner said No to leaves its asked note for a day, and
+    # F530 kept any later step's write of exactly that edit's text, as if the No'd box had said yes
+    import glob, time
+    r = _tests_repo(tmp_path)
+    t = r / "tests" / "test_a.py"
+    ti = {"file_path": str(t), "old_string": "x == 5", "new_string": "x == 5 or True"}
+    data = json.dumps({"tool_name": "Edit", "tool_input": ti, "cwd": str(r), "session_id": "s1",
+                       "tool_use_id": "toolu_no_%d" % time.time_ns()})
+    assert ASKED in subprocess.run([PY, os.path.join(FG, "guard.py")], input=data, capture_output=True, text=True).stdout
+    for n in glob.glob(str(r / ".git" / "**" / "pending" / "*.json"), recursive=True):   # the owner said No; a minute
+        j = json.loads(open(n).read()); j["start"] = j.get("start", time.time()) - 60     # later the helper writes it
+        open(n, "w").write(json.dumps(j))
+    later = t.read_text().replace("x == 5", "x == 5 or True")
+    kind, said = _helper_step(r, "Bash", {"command": "git status --short"}, run=lambda: t.write_text(later))
+    assert "or True" not in t.read_text() and "PUT BACK" in said, \
+        "PROOF: a write of an edit the owner said No to was kept as if he had said yes: " + said
+
+
 def test_box_hours_ask_in_a_box_even_with_the_reviewer_lane_on(tmp_path):
     # F531 (the owner, 23 Nov 00:11 UTC: boxes any time 07:00-23:00, none overnight): with the reviewer lane on, the
     # game's PC sent daytime guard changes to the reviewer with no box, while the owner was there to answer
@@ -7422,9 +7626,9 @@ def test_box_hours_ask_in_a_box_even_with_the_reviewer_lane_on(tmp_path):
     assert ASKED not in hook()                                                    # no hours set: the reviewer, as before
     cfg = json.loads((r / "foundationguard.json").read_text())
     h = time.localtime().tm_hour
-    cfg["box_hours"] = "%02d:00-%02d:59" % (h, h); (r / "foundationguard.json").write_text(json.dumps(cfg)); _commit(r, "hours")
+    cfg["box_hours"] = "%02d:00-%02d:59" % ((h - 1) % 24, (h + 1) % 24); (r / "foundationguard.json").write_text(json.dumps(cfg)); _commit(r, "hours")
     assert ASKED in hook(), "PROOF: inside the owner's box hours a guard change went to the reviewer with no box"
-    cfg["box_hours"] = "%02d:00-%02d:00" % ((h + 1) % 24, (h + 2) % 24); (r / "foundationguard.json").write_text(json.dumps(cfg)); _commit(r, "night")
+    cfg["box_hours"] = "%02d:00-%02d:00" % ((h + 3) % 24, (h + 4) % 24); (r / "foundationguard.json").write_text(json.dumps(cfg)); _commit(r, "night")
     assert ASKED not in hook()
 
 
@@ -7433,7 +7637,7 @@ def test_a_change_answered_in_the_box_is_not_asked_again_at_the_upload(tmp_path)
     # reviewer lane on the upload listed the same change again for a yes
     import time
     h = time.localtime().tm_hour
-    r = _tests_repo(tmp_path, review_lane=True, box_hours="%02d:00-%02d:59" % (h, h))
+    r = _tests_repo(tmp_path, review_lane=True, box_hours="%02d:00-%02d:59" % ((h - 1) % 24, (h + 1) % 24))
     t = r / "tests" / "test_a.py"
     ti = {"file_path": str(t), "old_string": "    x = compute()\n", "new_string": "    x = compute()  # the value\n"}
     said, _ = _helper_step(r, "Edit", ti, lambda: t.write_text(t.read_text().replace(ti["old_string"], ti["new_string"])))
@@ -7446,12 +7650,87 @@ def test_a_change_answered_in_the_box_is_not_asked_again_at_the_upload(tmp_path)
     assert "NEEDS YOUR OK  tests/test_a.py" in sh(f"{PY} {FG}/ownerok.py", r).stdout
 
 
+def test_a_weaker_change_allowed_in_the_box_is_not_asked_again_at_the_upload(tmp_path):
+    # F540 (the game's PC, 23 Nov 20:34 UTC): the owner allowed a foundationguard.json edit in the box, flagged "may
+    # catch less", and the upload asked his yes again: F532 carried a box yes over only for gathered changes
+    import time
+    h = time.localtime().tm_hour
+    r = _tests_repo(tmp_path, box_hours="%02d:00-%02d:59" % ((h - 1) % 24, (h + 1) % 24))
+    t = r / "tests" / "test_a.py"
+    ti = {"file_path": str(t), "old_string": "    assert x == 5\n", "new_string": "    assert True\n"}
+    said, _ = _helper_step(r, "Edit", ti, lambda: t.write_text(t.read_text().replace(ti["old_string"], ti["new_string"])))
+    assert said == "ask" and "assert True" in t.read_text()                  # asked in the box; the owner said yes
+    _commit(r, "the yes'd weaker edit")
+    listed = sh(f"{PY} {FG}/ownerok.py", r).stdout
+    assert "NEEDS YOUR OK  tests/test_a.py" not in listed, "PROOF: a weaker change the owner allowed in the box was asked again: " + listed
+    assert sh(f"{PY} {FG}/push.py", r).returncode == 0
+    book = r / ".git" / "foundationguard" / "box_yes.json"                # used up by that upload
+    assert "tests/test_a.py" not in (book.read_text() if book.exists() else "")
+    t.write_text(t.read_text().replace("assert True", "assert 1")); _commit(r, "no box")
+    assert "NEEDS YOUR OK  tests/test_a.py" in sh(f"{PY} {FG}/ownerok.py", r).stdout
+
+
+def test_the_upload_asks_the_typed_yes_in_the_owners_own_window(tmp_path):
+    # F541 (the game's PC, 23 Nov 21:07 UTC): the owner ran the upload in his own window, and it stopped with "1 decision
+    # for you" and no way to give the yes there
+    r = _tests_repo(tmp_path)
+    t = r / "tests" / "test_a.py"; t.write_text(t.read_text().replace("assert x == 5", "assert True")); _commit(r, "weaker")
+    up = lambda typed: subprocess.run([PY, os.path.join(FG, "push.py")], cwd=r, capture_output=True, text=True,
+                                      input=typed + "\n", env=dict(os.environ, FG_BREAK=os.environ.get("FG_BREAK") or "ownerok_tty"))
+    p = up("WRONG")
+    assert p.returncode != 0 and "type " in p.stdout, p.stdout
+    import re as _re
+    code = _re.search(r"type ([A-Z]{4}) and press Enter", p.stdout)
+    assert code, "PROOF: the upload in the owner's own window offered no typed yes: " + p.stdout[-600:]
+    p = subprocess.run([PY, os.path.join(FG, "push.py")], cwd=r, capture_output=True, text=True, env=dict(os.environ, FG_BREAK=os.environ.get("FG_BREAK") or "ownerok_tty"),
+                       input="")
+    assert p.returncode != 0                                               # no answer is a no
+
+
+def test_a_merge_the_helper_commits_keeps_what_git_merged(tmp_path):
+    # F552 (the game's PC, 25 Nov): the owner ran git merge --no-ff --no-commit of a cloud branch in his own window, the
+    # helper resolved the conflict in the kit's box and committed; the kit then put back the files git had merged on its
+    # own and one the merge removed, so the folder no longer matched its own commit and the build broke
+    import time
+    h = time.localtime().tm_hour
+    r = _tests_repo(tmp_path, box_hours="%02d:00-%02d:59" % ((h - 1) % 24, (h + 1) % 24))
+    body = lambda n, v: "def test_%s():\n    assert %d == %d\n" % (n, v, v)
+    _write(r, {"tests/test_b.py": body("b", 1), "tests/test_c.py": body("c", 1), "tests/test_d.py": body("d", 1),
+               "tests/test_e.py": "\n".join("# line %d" % i for i in range(20)) + "\n" + body("e", 1)})
+    _commit(r, "more tests"); sh("git push -q origin HEAD:feature/x", r)
+    base = sh("git rev-parse --abbrev-ref HEAD", r).stdout.strip()
+    sh("git checkout -q -b cloud", r)
+    _write(r, {"tests/test_b.py": body("b", 1) + "\n\n" + body("b2", 2), "tests/test_d.py": body("d", 3),
+               "tests/test_e.py": (r / "tests" / "test_e.py").read_text().replace("# line 2\n", "# line 2, cloud\n")})
+    (r / "tests" / "test_c.py").unlink(); _commit(r, "cloud work"); sh("git push -q origin cloud", r)
+    sh(f"git checkout -q {base}", r)
+    _write(r, {"tests/test_d.py": body("d", 4),
+               "tests/test_e.py": (r / "tests" / "test_e.py").read_text().replace("# line 17\n", "# line 17, here\n")})
+    _commit(r, "work here")
+    _helper_step(r, "Bash", {"command": "git status"}); _helper_step(r, "Bash", {"command": "git status"})
+    sh("git merge -q --no-ff --no-commit cloud", r)                                # the owner, in his own window
+    _helper_step(r, "Bash", {"command": "git status"})
+    d = r / "tests" / "test_d.py"
+    said, _ = _helper_step(r, "Write", {"file_path": str(d), "content": body("d", 5)}, lambda: d.write_text(body("d", 5)))
+    assert said == "ask"                                                            # the conflict, resolved in the box
+    _hgit(r, "add", "-A")
+    kind, out = _helper_step(r, "Bash", {"command": "git commit -q -m merge"}, lambda: _hgit(r, "commit", "-q", "-m", "merge"))
+    left = sh("git status --porcelain", r).stdout.strip()
+    assert "PUT BACK" not in out and left == "", "PROOF: the kit put back files a merge brought: " + out + " | " + left
+    assert "b2" in (r / "tests" / "test_b.py").read_text() and not (r / "tests" / "test_c.py").exists()
+    assert "cloud" in (r / "tests" / "test_e.py").read_text() and "here" in (r / "tests" / "test_e.py").read_text()
+    assert "5 == 5" in d.read_text()
+    e = r / "tests" / "test_e.py"                                                   # a hand change after it is still judged
+    kind, out = _helper_step(r, "Bash", {"command": "git status"}, lambda: e.write_text(e.read_text().replace("1 == 1", "1 >= 0")))
+    assert "1 >= 0" not in e.read_text(), out
+
+
 def test_a_version_allowed_in_the_box_is_kept_in_another_copy(tmp_path):
     # F533 (the game's PC, 23 Nov 04:30 UTC): the owner allowed a BUILD_ORDER.md change in the box in the work copy; the
     # night rehearsal checked out that commit (not uploaded yet) in the night copy, and the kit put the file back there
     import time
     h = time.localtime().tm_hour
-    r = _tests_repo(tmp_path, box_hours="%02d:00-%02d:59" % (h, h))
+    r = _tests_repo(tmp_path, box_hours="%02d:00-%02d:59" % ((h - 1) % 24, (h + 1) % 24))
     night = tmp_path / "night"; sh(f"git worktree add -q --detach {night}", r)
     _helper_step(r, "Bash", {"command": "git status"}); _helper_step(r, "Bash", {"command": "git status"})
     w = r / "tests" / "test_b.py"; body = "def test_b():\n    assert 1 == 1\n"
@@ -7536,6 +7815,65 @@ def test_a_gate_records_pattern_covers_the_nightlys_files(tmp_path):
     assert not T.gate_record("foundationguard.json", {"gate_records": ["*"]})
 
 
+def test_another_sessions_running_step_keeps_its_file_until_its_own_check(tmp_path):
+    # F545 (the game's PC, 24 Nov 04:12 PT): a build session's Bash step was let change a guard file and ran for two
+    # minutes; a second session's step ended meanwhile, and its check put the file back, blaming its own unrelated mv
+    import time
+    h = time.localtime().tm_hour
+    r = _tests_repo(tmp_path, box_hours="%02d:00-%02d:59" % ((h - 1) % 24, (h + 1) % 24))
+    _helper_step(r, "Bash", {"command": "git status"}, sid="s1"); _helper_step(r, "Bash", {"command": "git status"}, sid="s2")
+    t = r / "tests" / "test_a.py"
+    ti = {"command": "sed -i 's/x == 5/x == 5 and x > 0/' tests/test_a.py && bash Tools/long_check.sh"}
+    data = json.dumps({"tool_name": "Bash", "tool_input": ti, "cwd": str(r), "session_id": "s2", "tool_use_id": "toolu_s2_%d" % time.time_ns()})
+    assert ASKED in subprocess.run([PY, os.path.join(FG, "guard.py")], input=data, capture_output=True, text=True).stdout
+    edit = lambda: t.write_text(t.read_text().replace("x == 5", "x == 5 and x > 0"))  # the owner said yes; s2's step
+    kind, said = _helper_step(r, "Bash", {"command": "mv a b"}, edit, sid="s1")     # writes while s1's step runs and ends
+    assert "x > 0" in t.read_text() and "PUT BACK" not in said, \
+        "PROOF: another session's check put back a file a running step was let change: " + said
+    out = subprocess.run([PY, os.path.join(FG, "steps.py"), "--after"], input=data, capture_output=True, text=True).stdout
+    assert "x > 0" in t.read_text() and "PUT BACK" not in out, out                # its own check keeps it
+    more = lambda: t.write_text(t.read_text().replace("x > 0", "x > 1"))           # nothing running names it now
+    kind, said = _helper_step(r, "Bash", {"command": "git status"}, more, sid="s1")
+    assert "x > 1" not in t.read_text() and "PUT BACK" in said, said
+
+
+def test_a_copy_with_a_different_kit_is_left_to_its_own_hooks(tmp_path):
+    # F546 (the game's PC, 24 Nov): the play copy still ran the kit of 16 Nov, and its sessions' checks judged the work
+    # copy by the older rules, putting back a change the newer kit keeps
+    r = beginner_repo(tmp_path)
+    _write(r, {".gitignore": ".foundationguard/\n__pycache__/\n"})
+    sh(f"{PY} {FG}/setup.py --solo", r, PC); _commit(r, "the kit")
+    other = tmp_path / "other"; sh(f"git worktree add -q --detach {other}", r, PC)
+    _helper_step(r, "Bash", {"command": "git status"}); _helper_step(r, "Bash", {"command": "git status"})
+    g = other / "fg" / "guard.py"; old = g.read_text()
+    said, out = _helper_step(r, "Bash", {"command": "git status"}, lambda: g.write_text(old + "\n# changed on disk\n"))
+    assert "changed on disk" not in g.read_text(), out                    # the same kit: judged, even a kit file there
+    (other / "fg" / "steps.py").write_text((other / "fg" / "steps.py").read_text() + "\n# an older kit\n")
+    sh("git commit -qam older-kit", other, PC)                                # that copy's HEAD holds another kit
+    _helper_step(r, "Bash", {"command": "git status"})
+    n = other / "fg" / "guard.py"
+    said, out = _helper_step(r, "Bash", {"command": "git status"}, lambda: n.write_text(old + "\n# its own hooks judge this\n"))
+    assert "its own hooks" in n.read_text(), "PROOF: a copy running another kit was judged by this kit's step: " + out
+
+
+def test_the_owners_change_during_a_listed_wait_step_is_not_put_back(tmp_path):
+    # F557 (the game's PC, 25 Nov 23:26 UTC): a helper's step that only waited (session_wait.sh) ran for minutes; the
+    # owner pasted his own command meanwhile, and the check after the wait put his change back as the helper's
+    r = _tests_repo(tmp_path, wait_commands=["bash Tools/Scripts/session_wait.sh *"])
+    _helper_step(r, "Bash", {"command": "git status"}); _helper_step(r, "Bash", {"command": "git status"})
+    t = r / "tests" / "test_a.py"
+    paste = lambda: t.write_text(t.read_text().replace("x == 5", "x == 5 and x > 1"))
+    kind, said = _helper_step(r, "Bash", {"command": 'bash Tools/Scripts/session_wait.sh 90 "the owner\'s merge"'}, paste)
+    assert "x > 1" in t.read_text() and "PUT BACK" not in said, "PROOF: the owner's change during a wait step was put back: " + said
+    more = lambda: t.write_text(t.read_text().replace("x > 1", "x > 2"))
+    kind, said = _helper_step(r, "Bash", {"command": 'bash Tools/Scripts/session_wait.sh 90 "x" && echo done'}, more)
+    assert "x > 2" not in t.read_text(), said                                       # not only the wait: judged as a step
+    g = r / "foundationguard.json"; was = g.read_text()
+    kind, said = _helper_step(r, "Bash", {"command": 'bash Tools/Scripts/session_wait.sh 90 "x"'},
+                              lambda: g.write_text(was.replace('"github_check": false', '"github_check": false, "guard": "off"')))
+    assert '"guard": "off"' not in g.read_text(), said                              # the kit's switches are still put back
+
+
 def test_a_copy_a_run_owns_is_left_out_of_other_copies_checks(tmp_path):
     # F537 (the owner, 23 Nov 08:10 UTC): the nightly writes guard files in its own copy for hours; a helper's step in the
     # work copy checked that copy too, so a write landing during the step could be put back, and the PC stopped all night
@@ -7549,3 +7887,107 @@ def test_a_copy_a_run_owns_is_left_out_of_other_copies_checks(tmp_path):
     t = r / "tests" / "test_a.py"                                                   # the work copy itself is still guarded
     said, out = _helper_step(r, "Bash", {"command": "git status"}, lambda: t.write_text(t.read_text().replace("x == 5", "x >= 5")))
     assert "x == 5" in t.read_text(), out
+
+
+def test_size_check_before_the_box_remembers_unchanged_files(tmp_path, monkeypatch):
+    # the game's PC, 27 Nov: the size check measured all 3,000 of the game's files before the owner's box (77 s, past the
+    # hook's limit), so the upload was blocked three times. The box's check now takes each unchanged file's measurement
+    # from the last run; the gate's own check still measures every file afresh
+    r = repo(tmp_path, extra={"structure": {"include": ["**/*.py"], "base_ref": "none"}})
+    (r / "a.py").write_text("def a(x):\n    return x\n"); (r / "b.py").write_text("def b(y):\n    return y + 1\n")
+    _commit(r)
+    sys.path.insert(0, FG)
+    import config as C, structure as S
+    cfg = C.load(str(r))
+    fresh = S.check(cfg)                                                     # the gate's way: measures, leaves a record
+    n = [0]
+    real = S._one_file
+    monkeypatch.setattr(S, "_one_file", lambda *a: (n.__setitem__(0, n[0] + 1), real(*a))[1])
+    assert S.check(cfg, cached=True) == fresh and n[0] == 0, n               # nothing changed: nothing measured again
+    (r / "b.py").write_text("def b(y):\n    return y + 2\n")
+    assert S.check(cfg, cached=True)[0] and n[0] == 1, n                     # only the changed file
+    n[0] = 0; S.check(cfg)
+    assert n[0] == 2, n                                                      # the gate measures every file
+
+
+def test_size_check_reads_code_quickly_and_the_same(tmp_path, monkeypatch):
+    # same day: the comment cleaner looked at every character with 14 rules (most of the 77 s). A run of characters
+    # that can't start a comment, a string or a template is now copied at once; the answer must not change
+    sys.path.insert(0, FG)
+    import funcs as F
+    line = '    total = compute(alpha, beta) + table[index] * 3; // note "x" /* y */ more\n'
+    text, import_time = (line * 100000).split("\n"), __import__("time")
+    outer = os.environ.get("FG_BREAK", "")                                  # set when this check is being proven
+    monkeypatch.setenv("FG_BREAK", "cleaner_fast"); F._CLEAN.clear()
+    t = import_time.time(); slow = F.clean_lines(text[:20000], ".cpp")      # a fifth of it, character by character
+    slow_s = import_time.time() - t
+    monkeypatch.setenv("FG_BREAK", outer); F._CLEAN.clear()
+    assert F.clean_lines(text[:20000], ".cpp") == slow                       # the same answer
+    F._CLEAN.clear(); t = import_time.time(); F.clean_lines(text, ".cpp")
+    assert import_time.time() - t < slow_s, (import_time.time() - t, slow_s)  # all of it, faster than a fifth the old way
+
+
+def test_size_check_reads_old_line_counts_in_one_go(tmp_path, monkeypatch):
+    # same day: the growth check ran one git command per file to count its lines on the base branch (2 s of the game's
+    # check). One git call now reads them all, with the same counts; a file the base didn't have counts 0
+    r = repo(tmp_path, extra={"structure": {"include": ["**/*.py"], "base_ref": "main", "max_growth_lines": 2}})
+    (r / "a.py").write_text("x = 1\n"); (r / "sp ace.py").write_text("y = 2\n"); _commit(r); sh("git branch -f main", r)
+    (r / "a.py").write_text("x = 1\n" * 6); (r / "new.py").write_text("z = 3\n" * 5); _commit(r, "grow")
+    sys.path.insert(0, FG)
+    import config as C, structure as S
+    calls = []
+    real = S._lines_at
+    monkeypatch.setattr(S, "_lines_at", lambda *a: (calls.append(a), real(*a))[1])
+    ok, rep = S.check(C.load(str(r)))
+    assert "a.py: grew 4 lines" in rep and "new.py: grew 5 lines" in rep and "sp ace.py" not in rep, rep
+    assert calls == [], calls                                                # no per-file git calls
+
+
+def test_checks_in_a_test_file_are_not_counted_as_choices(tmp_path):
+    # the game's PC, 27 Nov: test functions that are lists of checks failed "too many choices" (over 15), because each
+    # check's own condition (a && b, x || y, ?:) was counted as a choice the code makes. In a test file a check line's
+    # conditions no longer count (its loops still do); game code with the same lines is counted as before
+    body = "".join(f"    TestTrue(TEXT(\"c{i}\"), a{i} > 0 && b{i} < 9 || c{i});\n" for i in range(12))
+    loops = "    for (int i = 0; i < 3; ++i) { TestTrue(TEXT(\"l\"), i >= 0 && i < 3); }\n"
+    src = "bool RunTest()\n{\n" + body + loops + "    return true;\n}\n"
+    py = "def test_many():\n" + "".join(f"    assert a{i} and b{i} or c{i}\n" for i in range(10)) + "    return 1\n"
+    r = repo(tmp_path, extra={"structure": {"include": ["**/*.cpp", "**/*.py"], "base_ref": "none"}})
+    _write(r, {"Source/Tests/LooksTests.cpp": src, "Source/Sim/Looks.cpp": src, "tests/test_many.py": py, "tools/many.py": py})
+    _commit(r)
+    out = sh(f"{PY} {FG}/structure.py", r).stdout
+    assert "Source/Sim/Looks.cpp::RunTest: tangled" in out and "tools/many.py::test_many: tangled" in out, out
+    assert "LooksTests.cpp::RunTest" not in out and "tests/test_many.py" not in out, out
+    sys.path.insert(0, FG)
+    import design as D
+    assert D.tangle_clike(["for (;;) { TestTrue(x && y); }"], 0, 0, checks=True)[0] == 2    # its loop still counts
+
+
+def test_a_test_a_script_added_is_kept_and_logged(tmp_path):
+    # the game's PC, 27 Nov: a helper's own patch script (run from outside the project) added a new test to a guarded
+    # test file. Only new tests, so it was kept, as the owner's rule says; but no line in the log said so, and it looked
+    # like a write that slipped past. The check after the step now logs it, with the command that wrote it
+    r = repo(tmp_path, extra={"guard_paths": ["Source/Tests/**"]})
+    looks = ('IMPLEMENT_SIMPLE_AUTOMATION_TEST(FA, "G.A", 0)\nbool FA::RunTest(const FString& P)\n{\n'
+             '    TestTrue(TEXT("a"), 1 == 1);\n    return true;\n}\n')
+    _write(r, {"Source/Tests/LooksTests.cpp": looks}); _commit(r)
+    new = ('IMPLEMENT_SIMPLE_AUTOMATION_TEST(FB, "G.B", 0)\nbool FB::RunTest(const FString& P)\n{\n'
+           '    TestTrue(TEXT("b"), 2 == 2);\n    return true;\n}\n') + looks
+    (tmp_path / "s").mkdir(); (tmp_path / "s" / "new.txt").write_text(new)
+    (tmp_path / "s" / "patch_tests.py").write_text("import sys\nopen(sys.argv[2], 'w').write(open(sys.argv[1]).read())\n")
+    cmd = f'{PY} -I "{tmp_path / "s" / "patch_tests.py"}" "{tmp_path / "s" / "new.txt"}" "{r / "Source/Tests/LooksTests.cpp"}"'
+    said, out = _helper_step(r, "Bash", {"command": cmd}, lambda: sh(cmd, r))
+    assert said == "allow" and (r / "Source/Tests/LooksTests.cpp").read_text() == new, (said, out)   # kept: only adds
+    cl = (r / ".foundationguard" / "catches.log").read_text()
+    assert "added tests (no ask)" in cl and "Source/Tests/LooksTests.cpp: kept, it only adds tests" in cl and "patch_tests.py" in cl, cl
+
+
+def test_the_box_says_what_the_kit_found_in_plain_words(tmp_path):
+    # the game's PC, 27 Nov: the owner couldn't judge a box whose only explanation was a quoted line of test code ("THIS
+    # MAY BE WEAKER: a check line was changed ... TestTrue(TEXT(...), M.A == Again.A && M."). "What could go wrong" now
+    # says what the kit found in plain words; the code stays in the details
+    r = _tests_repo(tmp_path)
+    t = str(r / "tests" / "test_a.py")
+    for new, words in (("    assert x == 5 or x == 6\n", "one of the test's existing checks was rewritten"),
+                       ("", "one of the test's checks was deleted")):
+        out = hook("Edit", {"file_path": t, "old_string": "    assert x == 5\n", "new_string": new}, r).stdout
+        assert ASKED in out and "WHAT COULD GO WRONG: " + words in out, out

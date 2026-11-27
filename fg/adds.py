@@ -23,6 +23,7 @@ import difflib, os, re
 
 import paths as P
 import weaken as W
+import addchecks as AC
 
 BREAK = lambda k: os.environ.get("FG_BREAK", "") == k
 CODE = (".py", ".gd", ".cs", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".js", ".mjs", ".cjs", ".mts", ".cts", ".ts", ".tsx", ".jsx", ".go", ".java",
@@ -333,6 +334,9 @@ def only_adds(path, old, new, cfg=None):
     if BREAK("adds_free"):
         return "the owner's yes is asked for every change"
     if not is_test_file(path, cfg):
+        why = _adds_a_check(path, old, new)
+        if why is not False:
+            return why
         if BREAK("not_test_said_plain"):
             return "it is not a test file"
         # the game's PC, 21 Nov: a new file of helpers under Private/Tests/ was told to the owner as "it is not a test
@@ -352,17 +356,45 @@ def only_adds(path, old, new, cfg=None):
         if not any(_name(l) for l in nl):
             return "the new file holds no test"
         return _patches(nl, nl, path)
-    old_names, added = _names(ol) | _imported(ol), []
+    old_names, added, later = _names(ol) | _imported(ol), [], []
+    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, ol, nl, autojunk=False).get_opcodes():
+        if op == "equal":
+            continue
+        if op == "replace" and AC.recorded_fill(ol[i1:i2], nl[j1:j2]):
+            continue                                    # a recorded value written where it was 0 (F548)
+        if op != "insert":
+            return "it changes or removes lines that were there"
+        why = _block_ok(nl[j1:j2], nl[:j1], nl[j2:], old_names)
+        if why:
+            later.append((why, j1, j2))
+        added += nl[j1:j2]
+    defined = AC.new_functions(added)
+    for why, j1, j2 in later:                           # a new case's count added to the total (F549)
+        if not AC.accumulates(nl[j1:j2], nl[:j1], nl[j2:], ol, defined):
+            return why
+    return _patches(added, nl, path)
+
+
+def _adds_a_check(path, old, new):
+    """For a guard file whose name doesn't mark it as a test: None when the change only adds a check or raises a floor
+    (fg/addchecks.py, the owner 24 Nov), a reason when such a rule finds it doesn't, or False when none applies."""
+    r = AC.floor_raise(path, old, new)
+    if r != "":
+        return r
+    if AC.new_record(path, old, new):
+        return None
+    if not (path or "").lower().endswith((".sh", ".bash")) or not (old or "").strip():
+        return False
+    ol, nl = old.split("\n"), new.split("\n")
     for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, ol, nl, autojunk=False).get_opcodes():
         if op == "equal":
             continue
         if op != "insert":
             return "it changes or removes lines that were there"
-        why = _block_ok(nl[j1:j2], nl[:j1], nl[j2:], old_names)
+        why = AC.shell_block(nl[j1:j2], ol)
         if why:
             return why
-        added += nl[j1:j2]
-    return _patches(added, nl, path)
+    return None
 
 
 def after_edit(tool, ti, before):

@@ -145,16 +145,53 @@ def _nearest_on_remote(root):
     return max(sorted(bases), key=depth) if bases else None
 
 
+_BLOBS = {}       # (folder, "rev:path") -> (git's id or None, text or None): one process, one look per version
+
+
+def _prefetch(root, specs):
+    """Read these versions ("rev:path") with one git call. The game's PC, 26 Nov: after a merge of 38 test files the
+    owner-OK list made about three git calls a file, past the AI tool's 20 s limit for the guard on Windows, so the
+    upload was blocked (F554)."""
+    todo = [x for x in dict.fromkeys(specs) if (root, x) not in _BLOBS and "\n" not in x]
+    if not todo or BREAK("ownerok_batch"):
+        return
+    p = subprocess.run(["git", "cat-file", "--batch"], cwd=root, capture_output=True,
+                       input=("\n".join(todo) + "\n").encode("utf-8"))
+    if p.returncode != 0:
+        return
+    out, i = p.stdout, 0
+    for x in todo:
+        j = out.find(b"\n", i)
+        if j < 0:
+            return
+        head = out[i:j].decode("utf-8", "replace").split()
+        if len(head) == 3 and head[1] in ("blob", "tree", "commit", "tag"):
+            n = int(head[2])
+            body = out[j + 1:j + 1 + n].decode("utf-8", "replace").replace("\r\n", "\n").replace("\r", "\n")
+            _BLOBS[(root, x)] = (head[0], body if head[1] == "blob" else None)
+            i = j + 1 + n + 1
+        else:
+            _BLOBS[(root, x)] = (None, None)
+            i = j + 1
+
+
+def _blob(root, spec):
+    _prefetch(root, [spec])
+    if (root, spec) in _BLOBS:
+        return _BLOBS[(root, spec)]
+    r = _git(root, "rev-parse", "-q", "--verify", spec)
+    oid = r.stdout.strip() or None
+    t = _git(root, "show", spec) if oid else None
+    return oid, (t.stdout if t is not None and t.returncode == 0 else None)
+
+
 def _old_new(root, rng, f):
     base = rng.split("..")[0]
-    old = _git(root, "show", f"{base}:{f}")
-    new = _git(root, "show", f"HEAD:{f}")
-    return (old.stdout if old.returncode == 0 else ""), (new.stdout if new.returncode == 0 else "")
+    return (_blob(root, f"{base}:{f}")[1] or ""), (_blob(root, f"HEAD:{f}")[1] or "")
 
 
 def _version(root, f):
-    r = _git(root, "rev-parse", "-q", "--verify", f"HEAD:{f}")
-    return r.stdout.strip() or "deleted"
+    return _blob(root, f"HEAD:{f}")[0] or "deleted"
 
 
 def _kit_is_new(root, rng):
@@ -193,6 +230,11 @@ def _changed_files(cfg, rng):
         return []
     changed = [f for f in _git(root, "diff", "--name-only", rng).stdout.split("\n") if f]
     globs = C.guard_globs(cfg)
+    base = rng.split("..")[0]
+    for k in [k for k in _BLOBS if k[0] == root and not k[1].startswith(base + ":")]:
+        del _BLOBS[k]                                   # HEAD may have moved since the last list: read it again
+    _prefetch(root, [x for f in changed if P.matches(f, globs) or CD.TEST_FILE.search(f) or CD.approved_check_file(f)
+                     for x in (f"{base}:{f}", f"HEAD:{f}")])
     gathered = _gathered(cfg, root, rng)
     out = []
     for f in changed:
@@ -266,6 +308,46 @@ def _same_text(root, a, b):
     return x.stdout.replace("\r\n", "\n") == y.stdout.replace("\r\n", "\n")
 
 
+def _boxed(cfg, f, v):
+    """The game's PC, 23 Nov 20:34 UTC: the owner allowed a foundationguard.json edit in the box (the box said it may
+    catch less), and the upload asked his yes again; F532 had carried a box yes over only for gathered changes. Any
+    version the owner's box let through counts as his yes at the upload, once: the upload that carries it uses it up
+    (fg/push.py) (F540)."""
+    if BREAK("box_yes_any"):
+        return False
+    import steps as SP
+    return _same_text(cfg["_root"], SP.box_yes(cfg).get(f), v)
+
+
+def used_box_yeses(cfg, todo):
+    """After an upload: the box yeses it carried are used up, so they can't cover the same text again later (F540)."""
+    import steps as SP
+    try:
+        book = SP.box_yes(cfg)
+        left = {f: v for f, v in book.items() if not any(f == t[0] and _same_text(cfg["_root"], v, t[2]) for t in todo)}
+        if left != book:
+            SP._write_json(os.path.join(SP._home(cfg), SP.BOX_YES), left)
+    except Exception:
+        pass
+
+
+def give_in_terminal(cfg):
+    """The game's PC, 23 Nov 21:07 UTC: the owner ran the upload in his own window, and it stopped with "1 decision for
+    you" and no way to give the yes there. In the owner's own terminal the upload now asks the typed yes itself (F541)."""
+    import door as D
+    if BREAK("upload_typed_yes") or not (D.terminal() or BREAK("ownerok_tty")):
+        return False
+    todo = missing(cfg)
+    if not todo or not _typed_yes(cfg, todo):
+        return False
+    import ledger as LG
+    LG.grant(cfg, todo, "terminal", "\n".join(explain(cfg, todo)))
+    import catches as CL
+    CL.log(cfg, "owner ok", "owner said yes in a terminal at the upload to: " + ", ".join(f for f, _, _ in todo))
+    print("OWNER-OK: recorded (your typed yes at this upload).")
+    return True
+
+
 def _not_only_adds(cfg, f, old, new):
     import adds as AD
     if not (P.matches(f, C.guard_globs(cfg)) and AD.owners_own(cfg, f)):
@@ -297,7 +379,7 @@ def given(cfg):
 def missing(cfg, rng=None):
     """The changes that still need the owner's OK (an OK for an older version of the file does not count)."""
     ok = given(cfg)
-    has = (lambda f, v: f in ok) if BREAK("ownerok_version") else (lambda f, v: ok.get(f) == v)
+    has = (lambda f, v: f in ok) if BREAK("ownerok_version") else (lambda f, v: ok.get(f) == v or _boxed(cfg, f, v))
     import review as RV
     todo = [(f, why, v) for f, why, v in needing_ok(cfg, rng) if not has(f, v)]
     done = RV.passed(cfg, todo)                      # the reviewer's PASS stands in for the owner's yes (the owner, 16 Nov)
@@ -315,8 +397,9 @@ def card(items):
             "happened": lines + ".",
             "means": "A helper changed something that guards your project, so it may catch less from now on.",
             "action": "Not uploaded. If you asked for this, tell the helper \"yes, ask me\": it runs "
-                      "python fg/ownerok.py --give and a permission box asks you. If you did not, tell the helper "
-                      "\"no, put it back\".", "evidence": [f for f, _, _ in items]}
+                      "python fg/ownerok.py --give and a permission box asks you; or run the upload in your own window "
+                      "and type the code it shows. If you did not, tell the helper \"no, put it back\".",
+            "evidence": [f for f, _, _ in items]}
 
 
 NOTE = "ownerok_asking"
