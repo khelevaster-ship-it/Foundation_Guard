@@ -2330,6 +2330,7 @@ def decide(why_file, cfg, reasons=None, special=None, rule=None, extra=""):
     looks_weaker = (bool(reasons) if BREAK("lead_change_is_weaker") else                 # the game's PC, 19 Nov: switching a
                     any(not r.startswith((W.UNSURE, W.CHANGE)) for r in reasons or []))  # stricter setting ON read "weaker"
     looks_weaker = looks_weaker or "WEAKER" in reason
+    BX.PLAIN_NOW[0] = BX.plain(reasons)                                               # the game's PC, 27 Nov
     reason = BX.lead(rule, getattr(why_file, "rel", why_file), looks_weaker) + reason   # the owner, 16 Nov
     key, here = why_file, cfg
     if isinstance(why_file, Elsewhere):                    # another copy's file: its own settings, its own catch log

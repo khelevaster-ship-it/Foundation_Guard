@@ -1089,7 +1089,7 @@ def _check(cfg, note, what, yes=None):
             if newly_covered(root, r, base, now, since, was.get("head")):
                 keep.append(r)                         # the guard list grew: taken as it is (the game's PC, 16 Nov)
                 _newly_told(cfg, r, what)
-            elif _yes(cfg, yes, note, r, full, base, now) and not BREAK("steps_keep"):
+            elif _yes(cfg, yes, note, r, full, base, now, what) and not BREAK("steps_keep"):
                 keep.append(r)
             elif r in git:
                 keep.append(r)
@@ -1309,7 +1309,7 @@ def _settled_told(cfg, st, ok, kept, what):
         _save(cfg, st)
 
 
-def _yes(cfg, yes, note, rel, full, base, now):
+def _yes(cfg, yes, note, rel, full, base, now, what=""):
     """Does this step's yes, or a free rule judged by what changed, keep this changed guard file?"""
     if yes is not None and yes.covers(full):
         _box_yes(cfg, rel, now)                        # the step's own box (the overlapping edit's step records its own)
@@ -1318,7 +1318,21 @@ def _yes(cfg, yes, note, rel, full, base, now):
         return True
     if BREAK("steps_free_state"):                      # before review 6: the note's own list of free files
         return bool(note) and full in note.get("free", [])
-    return _free_now(cfg, rel, base, now) or _github_holds(cfg, rel)
+    if _free_now(cfg, rel, base, now):
+        _free_told(cfg, rel, what)
+        return True
+    return _github_holds(cfg, rel)
+
+
+def _free_told(cfg, rel, what):
+    """The game's PC, 27 Nov: a helper's own script added a test to a test file; it was kept (only new tests), but no
+    line said so, and the owner couldn't tell what had happened. A direct edit is logged by the guard before it runs;
+    a change the guard couldn't read (a script, a program) is logged here."""
+    if BREAK("free_after_logged") or str(what or "").startswith(("Edit", "Write", "MultiEdit", "NotebookEdit")):
+        return
+    import catches as CL
+    CL.log(cfg, "added tests (no ask)", f"{rel}: kept, it only adds tests (written by a step the guard couldn't read "
+           f"before it ran: {str(what)[:160]})", what, "the check after every step")
 
 
 BOX_YES = "box_yes.json"

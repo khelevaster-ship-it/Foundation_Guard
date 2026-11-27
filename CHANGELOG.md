@@ -3,6 +3,9 @@
 Newest first. F-numbers are rows in `APPROVED.md`. Dates are 2026. Scores are before any fix unless marked post hoc.
 
 ## Next version (not yet released): Windows CI green, a guard that fails closed, and web projects
+- **Plain words in the box; a script's added test is logged** (F562, F563; 27 Nov). A box about a check that may be
+  weaker now says what the kit found in plain words. A test added by a helper's own script is kept, as before, and
+  now has its line in the catch log.
 - **A list of checks isn't "too many choices"** (F561; 27 Nov). In a test file, a check line's own condition no longer
   counts toward the function's choices; its loops still do. Game code is counted as before.
 - **The size check before the box is fast** (F558-F560; 27 Nov). On the game's 3,000 files it took 77 s against the

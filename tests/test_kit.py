@@ -7960,3 +7960,34 @@ def test_checks_in_a_test_file_are_not_counted_as_choices(tmp_path):
     sys.path.insert(0, FG)
     import design as D
     assert D.tangle_clike(["for (;;) { TestTrue(x && y); }"], 0, 0, checks=True)[0] == 2    # its loop still counts
+
+
+def test_a_test_a_script_added_is_kept_and_logged(tmp_path):
+    # the game's PC, 27 Nov: a helper's own patch script (run from outside the project) added a new test to a guarded
+    # test file. Only new tests, so it was kept, as the owner's rule says; but no line in the log said so, and it looked
+    # like a write that slipped past. The check after the step now logs it, with the command that wrote it
+    r = repo(tmp_path, extra={"guard_paths": ["Source/Tests/**"]})
+    looks = ('IMPLEMENT_SIMPLE_AUTOMATION_TEST(FA, "G.A", 0)\nbool FA::RunTest(const FString& P)\n{\n'
+             '    TestTrue(TEXT("a"), 1 == 1);\n    return true;\n}\n')
+    _write(r, {"Source/Tests/LooksTests.cpp": looks}); _commit(r)
+    new = ('IMPLEMENT_SIMPLE_AUTOMATION_TEST(FB, "G.B", 0)\nbool FB::RunTest(const FString& P)\n{\n'
+           '    TestTrue(TEXT("b"), 2 == 2);\n    return true;\n}\n') + looks
+    (tmp_path / "s").mkdir(); (tmp_path / "s" / "new.txt").write_text(new)
+    (tmp_path / "s" / "patch_tests.py").write_text("import sys\nopen(sys.argv[2], 'w').write(open(sys.argv[1]).read())\n")
+    cmd = f'{PY} -I "{tmp_path / "s" / "patch_tests.py"}" "{tmp_path / "s" / "new.txt"}" "{r / "Source/Tests/LooksTests.cpp"}"'
+    said, out = _helper_step(r, "Bash", {"command": cmd}, lambda: sh(cmd, r))
+    assert said == "allow" and (r / "Source/Tests/LooksTests.cpp").read_text() == new, (said, out)   # kept: only adds
+    cl = (r / ".foundationguard" / "catches.log").read_text()
+    assert "added tests (no ask)" in cl and "Source/Tests/LooksTests.cpp: kept, it only adds tests" in cl and "patch_tests.py" in cl, cl
+
+
+def test_the_box_says_what_the_kit_found_in_plain_words(tmp_path):
+    # the game's PC, 27 Nov: the owner couldn't judge a box whose only explanation was a quoted line of test code ("THIS
+    # MAY BE WEAKER: a check line was changed ... TestTrue(TEXT(...), M.A == Again.A && M."). "What could go wrong" now
+    # says what the kit found in plain words; the code stays in the details
+    r = _tests_repo(tmp_path)
+    t = str(r / "tests" / "test_a.py")
+    for new, words in (("    assert x == 5 or x == 6\n", "one of the test's existing checks was rewritten"),
+                       ("", "one of the test's checks was deleted")):
+        out = hook("Edit", {"file_path": t, "old_string": "    assert x == 5\n", "new_string": new}, r).stdout
+        assert ASKED in out and "WHAT COULD GO WRONG: " + words in out, out
