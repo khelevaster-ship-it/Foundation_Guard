@@ -754,7 +754,7 @@ def _lines_at(root, ref, p):
 def _counts_at(root, ref, paths):
     """{path: line count at ref} for many files in one git call (27 Nov: one git show per file took 2 s of the game
     PC's size check); a file that wasn't there is left out. None when git can't do it, so each is read on its own."""
-    if BRK("growth_batch") or not paths:
+    if BRK("growth_batch") or BRK("structure_bytes") or not paths:   # F081's break is the old per-file text read
         return None
     try:
         q = subprocess.run(["git", "cat-file", "--batch"], cwd=root, capture_output=True, timeout=60,
