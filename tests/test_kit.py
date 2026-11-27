@@ -7991,3 +7991,60 @@ def test_the_box_says_what_the_kit_found_in_plain_words(tmp_path):
                        ("", "one of the test's checks was deleted")):
         out = hook("Edit", {"file_path": t, "old_string": "    assert x == 5\n", "new_string": new}, r).stdout
         assert ASKED in out and "WHAT COULD GO WRONG: " + words in out, out
+
+
+def _slow_remote(r, seconds):
+    """origin answers nothing and takes this long to fail, like a remote that can't be reached quickly."""
+    py = sys.executable.replace("%", "%%").replace(" ", "% ")
+    sh(f'git config protocol.ext.allow always', r)
+    sh(f'git remote set-url origin "ext::{py} -c import% time;time.sleep({seconds})"', r)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="the owner's terminal is played with a pty, which Windows lacks")
+def test_the_owners_kit_update_is_known_before_any_remote_lookup(tmp_path):
+    # the game's PC, 27 Nov: the owner's kit update changed 12 kit files; at the next helper step each was first looked
+    # up on the remote (up to 8 s each) before the kit read its own record that the owner's command wrote it, so every
+    # step ran past the guard's 20 s and was refused. The owner's record is read first, with no remote lookup
+    r = repo(tmp_path, extra={"gather_asks": True})
+    _write(r, {".gitignore": ".foundationguard/\n"}); _commit(r, "start")
+    _helper_step(r, "Bash", {"command": "git status"})
+    assert "away mode is now OFF" in _in_a_terminal([f"{FG}/away.py", "off"], r, PC)
+    _slow_remote(r, 6)
+    import time
+    t = time.time(); _helper_step(r, "Bash", {"command": "git status"})
+    assert time.time() - t < 5, time.time() - t                                 # no remote lookup for the owner's file
+    assert json.loads((r / "foundationguard.json").read_text()).get("gather_asks") is False   # and it is kept
+
+
+def test_files_changed_between_steps_look_at_the_remote_once(tmp_path):
+    # same night: each of the 12 files was looked up on the remote on its own. One look now serves them all
+    r = repo(tmp_path)
+    _write(r, {".gitignore": ".foundationguard/\n", ".claude/settings.json": "{}\n", ".github/workflows/a.yml": "on: push\n"})
+    _commit(r, "start")
+    _helper_step(r, "Bash", {"command": "git status"})
+    cfg = json.loads((r / "foundationguard.json").read_text())
+    _write(r, {"foundationguard.json": json.dumps(dict(cfg, guard_paths=[])), ".claude/settings.json": '{"a": 1}\n',
+               ".github/workflows/a.yml": "on: pull_request\n"})                 # three switches, no step, no owner's record
+    _slow_remote(r, 2)
+    import time
+    t = time.time(); _helper_step(r, "Bash", {"command": "git status"})
+    assert time.time() - t < 5, time.time() - t                                 # one look (2 s), not three (6 s)
+    assert json.loads((r / "foundationguard.json").read_text()).get("guard_paths") != []          # still put back
+
+
+def test_listing_the_owners_yes_with_a_named_python_variable_opens_no_box(tmp_path):
+    # the game's PC, 27 Nov: "$PY" -I fg/ownerok.py (only listing what waits for the owner's yes) opened the yes box,
+    # because $PY was a word the kit couldn't see; the owner took that as the yes and answered a second box for --give.
+    # With "python_variables": ["PY"], $PY is read as python: listing opens no box, --give still does
+    r = _tests_repo(tmp_path, python_variables=["PY"])
+    t = r / "tests" / "test_a.py"; t.write_text(t.read_text() + "\n\ndef test_b():\n    assert compute() == 5\n")
+    _commit(r, "a test")                                                         # something for the list to show
+    assert ASKED not in hook("Bash", {"command": '"$PY" -I fg/ownerok.py 2>&1 | tail -3'}, r).stdout
+    sys.path.insert(0, FG)
+    import guard as G, pywrites as PW
+    PW.VARIABLES[:] = ["PY"]
+    try:
+        assert G._runs_owner_ok('"$PY" -I fg/ownerok.py --give') and G._runs_owner_ok('"$PYX" fg/ownerok.py')
+        assert not G._runs_owner_ok('"$PY" -I fg/ownerok.py 2>&1 | tail -3')
+    finally:
+        PW.VARIABLES[:] = []
