@@ -8048,3 +8048,98 @@ def test_listing_the_owners_yes_with_a_named_python_variable_opens_no_box(tmp_pa
         assert not G._runs_owner_ok('"$PY" -I fg/ownerok.py 2>&1 | tail -3')
     finally:
         PW.VARIABLES[:] = []
+
+
+LEDGERS = {"docs/PROOFS.md": "table", "docs/RUNS.md": "newest_on_top", "data/pins/names.json": "pins"}
+PROOFS = ("# Test proofs\n\nRead at: abc123 (10 tests; 2 added by hand: 12). Written by the ledger tool.\n\n"
+          "Counts: proven 3, not reached 1.\n\n## Sea (2)\n\n| Test | State | Commit |\n|---|---|---|\n"
+          "| MyGame.Sea.Tide | proven | aa |\n| MyGame.Sea.Wave | not reached | bb |\n\n## Sky (2)\n\n"
+          "| Test | State | Commit |\n|---|---|---|\n| MyGame.Sky.Sun | proven | cc |\n| MyGame.Sky.Moon | proven | dd |\n")
+ROW_ADDED = (PROOFS.replace("| MyGame.Sea.Wave | not reached | bb |\n", "| MyGame.Sea.Wave | not reached | bb |\n"
+                            "| MyGame.Sea.Foam | not reached | ee |\n")
+             .replace("## Sea (2)", "## Sea (3)").replace("not reached 1.", "not reached 2.")
+             .replace("by hand: 12)", "by hand: 12; MyGame.Sea.Foam added 28 Nov: 13)"))
+RUNS = "# Break proofs\n\nNewest run on top.\n\n## 2026-11-27 at aa\n\n- MyGame.Sea.Tide: failed as it should\n"
+RUN_ADDED = RUNS.replace("## 2026-11-27", "## 2026-11-28 at bb\n\n- MyGame.Sea.Foam: failed as it should\n\n## 2026-11-27")
+PINS = json.dumps({"_comment": "a change needs the owner's yes", "frozen_at": "2026-11-20",
+                   "switches": [{"name": "my.a", "value": 1}, {"name": "my.b", "value": 2}]}, indent=2)
+PIN_ADDED = PINS.replace('"2026-11-20"', '"2026-11-28"').replace('"value": 2\n    }', '"value": 2\n    },\n    {\n      "name": "my.c",\n      "value": 3\n    }')
+
+
+def _ledger_repo(tmp_path):
+    r = _tests_repo(tmp_path, guard_paths=["tests/**", "docs/**", "data/**"], ledgers=LEDGERS)
+    _write(r, {"docs/PROOFS.md": PROOFS, "docs/RUNS.md": RUNS, "data/pins/names.json": PINS}); _commit(r, "ledgers")
+    return r
+
+
+def test_a_row_added_to_a_ledger_the_owner_listed_needs_no_box(tmp_path):
+    # F567 (the owner, 28 Nov: "Yes, after the package"): rows added to Docs/TEST_PROOFS.md and Docs/BREAK_PROOFS.md and
+    # a name added to Data/Pins/frozen_names.json each asked the owner, who can't judge a row; nothing old changed
+    assert json.loads(PIN_ADDED)["switches"][2]["name"] == "my.c"
+    r = _ledger_repo(tmp_path)
+    for rel, new in (("docs/PROOFS.md", ROW_ADDED), ("docs/RUNS.md", RUN_ADDED), ("data/pins/names.json", PIN_ADDED)):
+        up = _edit_hook(r, "Write", {"file_path": str(r / rel), "content": new})
+        assert ASKED not in up, "PROOF: a row added to a ledger the owner listed asked the owner: " + rel
+    AD = _adds_mod()
+    cfg = {"ledgers": LEDGERS}
+    assert AD.only_adds("docs/OTHER.md", PROOFS, ROW_ADDED, cfg) is not None        # a ledger the owner didn't list
+    assert AD.only_adds("docs/PROOFS.md", "", ROW_ADDED, cfg) is not None            # a new ledger file
+    for bad in (ROW_ADDED.replace("| MyGame.Sea.Tide | proven", "| MyGame.Sea.Tide | not reached"),  # an old row
+                ROW_ADDED.replace("| MyGame.Sky.Moon | proven | dd |\n", ""),                       # a row gone
+                ROW_ADDED.replace("Written by", "Kept by")):                                      # prose reworded
+        assert AD.only_adds("docs/PROOFS.md", PROOFS, bad, cfg) is not None, bad
+    assert AD.only_adds("docs/RUNS.md", RUNS, RUN_ADDED.replace("failed as it should\n", "passed\n", 2), cfg) is not None
+    assert AD.only_adds("docs/RUNS.md", RUNS, RUNS + "\n## 2026-11-20 at cc\n", cfg) is not None       # not on top
+    for bad in (PIN_ADDED.replace('"value": 1', '"value": 9'), PINS.replace('"my.b"', '"my.x"'),
+                PIN_ADDED.replace('"a change needs', '"no change needs'), "{"):
+        assert AD.only_adds("data/pins/names.json", PINS, bad, cfg) is not None, bad
+    removed = json.dumps(dict(json.loads(PINS), switches=[{"name": "my.a", "value": 1}, {"name": "my.c", "value": 3}]))
+    assert AD.only_adds("data/pins/names.json", PINS, removed, cfg) is not None                       # my.b gone
+
+
+def test_a_ledgers_counts_must_move_by_just_the_rows_added(tmp_path):
+    # F568 (the owner, 28 Nov): a count line may change only by the rows added: the Counts line by their states, a
+    # heading's (N) by the rows under it, a running total by them all. Otherwise a row could be added with a count
+    # that hides one going missing
+    AD = _adds_mod()
+    cfg = {"ledgers": LEDGERS}
+    for bad in (ROW_ADDED.replace("not reached 2.", "not reached 1."),          # the count didn't move
+                ROW_ADDED.replace("proven 3, not reached 2.", "proven 4, not reached 2."),
+                ROW_ADDED.replace("## Sea (3)", "## Sea (4)"), ROW_ADDED.replace("## Sea (3)", "## Sea (2)"),
+                ROW_ADDED.replace("## Sky (2)", "## Sky (3)"), ROW_ADDED.replace("Foam added 28 Nov: 13)", "Foam added 28 Nov: 14)")):
+        assert AD.only_adds("docs/PROOFS.md", PROOFS, bad, cfg) is not None, \
+            "PROOF: a ledger's count moved by more or less than the rows added and asked no one: " + bad
+    assert AD.only_adds("docs/PROOFS.md", PROOFS, ROW_ADDED, cfg) is None
+
+
+def test_a_row_added_to_a_listed_ledger_is_not_called_weaker_at_the_upload(tmp_path):
+    # F569 (the owner, 28 Nov): a row added in "not reached" moves that count up, which the weakening finder reads as a
+    # limit raised; the upload's yes and its cards would have asked about the same row again
+    import importlib, sys as _s
+    _s.path.insert(0, FG); OK = importlib.import_module("ownerok"); W = importlib.import_module("weaken")
+    assert W.weaker("docs/PROOFS.md", PROOFS, ROW_ADDED)                         # the finder alone does call it weaker
+    cfg = {"ledgers": LEDGERS}
+    assert OK._why(cfg, "docs/PROOFS.md", PROOFS, ROW_ADDED) is None, \
+        "PROOF: the upload asked the owner about a row added to a ledger they listed"
+    lost = PROOFS.replace("| MyGame.Sea.Tide | proven", "| MyGame.Sea.Tide | not reached").replace("proven 3, not reached 1",
+                                                                                               "proven 2, not reached 2")
+    assert OK._why(cfg, "docs/PROOFS.md", PROOFS, lost) is not None              # an old row no longer proven still asks
+    assert OK._why({}, "docs/PROOFS.md", PROOFS, ROW_ADDED) is not None          # not listed: as before
+
+
+def test_a_ledger_row_is_added_only_where_it_cant_stand_in_for_another(tmp_path):
+    # F570 (the owner, 28 Nov): a second row for a test already there, a row above its table's own first rows, a new
+    # pin with an old pin's name, a run log's lines on top that aren't a section, or "frozen_at" moved with nothing
+    # added could each change what a reader (or a check) takes as the record, so each still asks
+    AD = _adds_mod()
+    cfg = {"ledgers": LEDGERS}
+    twice = ROW_ADDED.replace("MyGame.Sea.Foam", "MyGame.Sea.Tide")
+    above = ROW_ADDED.replace("| MyGame.Sea.Foam | not reached | ee |\n", "").replace(
+        "| Test | State | Commit |\n|---|---|---|\n| MyGame.Sea.Tide", "| Test | State | Commit |\n| MyGame.Sea.Foam | not reached | ee |\n|---|---|---|\n| MyGame.Sea.Tide", 1)
+    same_pin = PIN_ADDED.replace('"my.c"', '"my.a"')
+    loose = RUNS.replace("## 2026-11-27", "- MyGame.Sea.Foam: failed as it should\n\n## 2026-11-27")
+    date_only = PINS.replace('"2026-11-20"', '"2026-11-28"')
+    for path, old, bad in (("docs/PROOFS.md", PROOFS, twice), ("docs/PROOFS.md", PROOFS, above),
+                           ("data/pins/names.json", PINS, same_pin), ("docs/RUNS.md", RUNS, loose),
+                           ("data/pins/names.json", PINS, date_only)):
+        assert AD.only_adds(path, old, bad, cfg) is not None, "PROOF: a ledger add that could stand in for a record asked no one: " + bad

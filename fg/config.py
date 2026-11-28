@@ -78,6 +78,9 @@ DEFAULTS = {
                                          # question in the chat, and the kit checks the chat shows it (fg/box.py)
     "python_variables": [],              # names of variables that hold Python on this PC ("PY" for "$PY" - <<'EOF'): a
                                          # small Python program run through one is read like one run with python
+    "ledgers": {},                       # records only ever added to, and their kind: {"Docs/PROOFS.md": "table"};
+                                         # "newest_on_top" (a run log), "pins" (a JSON list of frozen names). A row
+                                         # added (with its counts moved by just that) needs no box (fg/ledgers.py)
     "chat_tools": [],                    # more tool-name patterns that send the owner a message (send_message,
                                          # post_message and the like are known already)
     "gather_asks": False,                # True: changes to the owner's own guard files (not the kit) don't ask one by one;

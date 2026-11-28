@@ -230,14 +230,14 @@ def _kit_is_new(cfg, rng):
 
 def weaker_cards(cfg, rng):
     """'For you' cards for guard files or tests this push made weaker (a removed check, a raised limit, a skip added)."""
-    import config as C, paths as P, weaken as W
+    import config as C, ledgers as LG, paths as P
     if not rng or BREAK("cards_weaker"):
         return []
     globs = C.guard_globs(cfg)
     files = [f for f in _changed(cfg, rng) if P.matches(f, globs) or TEST_FILE.search(f)]
     if _kit_is_new(cfg, rng):                                   # the push that installs the kit: its files have no "before"
         files = [f for f in files if not P.matches(f, ["fg/**"])]
-    found = ((f, W.weaker(f, *_old_new(cfg, rng, f))) for f in files)
+    found = ((f, LG.weaker(cfg, f, *_old_new(cfg, rng, f))) for f in files)
     return [_weaker_card(f, why) for f, why in found if why]
 
 

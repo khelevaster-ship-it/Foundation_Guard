@@ -205,8 +205,8 @@ LESS = "This check now CATCHES LESS: "             # round 9 follow-up: a weaker
 
 def _why(cfg, f, old, new):
     """Why a changed file needs the owner's OK, or None."""
-    import weaken as W
-    reasons = W.weaker(f, old, new)
+    import ledgers as LG
+    reasons = LG.weaker(cfg, f, old, new)
     if reasons:                                  # the kit's own code: its line rules guess (the game's PC, 13 Nov: a moved
         kit = P.matches(f, KIT_CODE) and not BREAK("ownerok_kit_maybe")      # line in push.py read as CATCHES LESS)
         return ("" if BREAK("ownerok_less") else KIT_MAYBE if kit else LESS) + "; ".join(reasons[:3])

@@ -334,7 +334,7 @@ def only_adds(path, old, new, cfg=None):
     if BREAK("adds_free"):
         return "the owner's yes is asked for every change"
     if not is_test_file(path, cfg):
-        why = _adds_a_check(path, old, new)
+        why = _adds_a_check(path, old, new, cfg)
         if why is not False:
             return why
         if BREAK("not_test_said_plain"):
@@ -375,9 +375,14 @@ def only_adds(path, old, new, cfg=None):
     return _patches(added, nl, path)
 
 
-def _adds_a_check(path, old, new):
+def _adds_a_check(path, old, new, cfg=None):
     """For a guard file whose name doesn't mark it as a test: None when the change only adds a check or raises a floor
-    (fg/addchecks.py, the owner 24 Nov), a reason when such a rule finds it doesn't, or False when none applies."""
+    (fg/addchecks.py, the owner 24 Nov) or only adds rows to a ledger the owner listed (fg/ledgers.py, 28 Nov), a
+    reason when such a rule finds it doesn't, or False when none applies."""
+    import ledgers as LG
+    r = LG.judge(cfg, path, old, new)
+    if r is not False:
+        return r
     r = AC.floor_raise(path, old, new)
     if r != "":
         return r
