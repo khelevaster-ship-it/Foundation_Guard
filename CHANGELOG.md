@@ -3,6 +3,10 @@
 Newest first. F-numbers are rows in `APPROVED.md`. Dates are 2026. Scores are before any fix unless marked post hoc.
 
 ## Next version (not yet released): Windows CI green, a guard that fails closed, and web projects
+- **The shrink rule** (F571-F590; 28 Nov, off until switched on). With `"structure": {"shrink": {"on": true, "since":
+  "<commit>"}}`, a listed oversized piece that an item changes must be smaller when the item closes; one-line fixes owe
+  nothing, a bigger fix with a test pays later through the piece's planned cut, and the record is worked out from the
+  history so it can't be written by hand. `python fg/structure.py --shrink` shows the books (`fg/shrink.py`).
 - **A row added to a ledger opens no box** (F567-F570; 28 Nov). List your append-only records and their kind in
   `"ledgers"` (`"table"`, `"newest_on_top"`, `"pins"`), and an edit that only adds a row, a run on top or a new pin
   needs no box. Count lines must move by exactly the rows added; any changed or removed line, a second row for the same

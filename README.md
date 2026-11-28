@@ -2,7 +2,7 @@
 
 <p align="center">A safety kit for people who build software with AI coding helpers, including people who don't code.<br>It stops a helper from quietly weakening a test, switching off a check or pushing untested work.</p>
 
-<p align="center"><img src="https://img.shields.io/badge/version-0.8.6%20beta-3ddc97" alt="Version 0.8.6, beta"> <img src="https://img.shields.io/badge/rules%20proven-570-3ddc97" alt="570 rules proven"> <img src="https://img.shields.io/badge/python-3.10%2B-3776ab" alt="Python 3.10 or newer"> <img src="https://img.shields.io/badge/outside%20code-none-8b949e" alt="No outside code"> <img src="https://img.shields.io/badge/licence-MIT-8b949e" alt="MIT licence"></p>
+<p align="center"><img src="https://img.shields.io/badge/version-0.8.6%20beta-3ddc97" alt="Version 0.8.6, beta"> <img src="https://img.shields.io/badge/rules%20proven-590-3ddc97" alt="590 rules proven"> <img src="https://img.shields.io/badge/python-3.10%2B-3776ab" alt="Python 3.10 or newer"> <img src="https://img.shields.io/badge/outside%20code-none-8b949e" alt="No outside code"> <img src="https://img.shields.io/badge/licence-MIT-8b949e" alt="MIT licence"></p>
 
 <p align="center"><a href="#install">Install</a> · <a href="#what-it-stops">What it stops</a> · <a href="#proof">Proof</a> · <a href="#limits">Limits</a> · <a href="docs/GUIDE.md">Guide</a></p>
 
@@ -35,7 +35,7 @@ helper that tries to give your yes opens your question instead.
 **A test in the way stays in the way.** The kit says when a change makes a check look weaker. A guard file changed
 without your yes is put back.
 
-**The rules are tested too.** Each of the 570 rules has a check that must fail when the rule is switched off on
+**The rules are tested too.** Each of the 590 rules has a check that must fail when the rule is switched off on
 purpose.
 
 AI review tools read the work afterwards and tell you what they think. FoundationGuard acts first, on your own
@@ -144,7 +144,7 @@ Results are AI-made and judged by their author. The full index is [evidence/EVID
 
 - **The kit's own tests** pass on Linux, Windows and macOS, on Python 3.10 and 3.12:
   [CI](https://github.com/khelevaster-ship-it/foundation_guard/actions/workflows/tests.yml).
-- **570 approved rules**, each proven by breaking its feature on purpose: [APPROVED.md](APPROVED.md), or run
+- **590 approved rules**, each proven by breaking its feature on purpose: [APPROVED.md](APPROVED.md), or run
   `python fg/prove.py --all`.
 - **A real game.** A helper tried to get bad work through a copy of a Godot game on Windows, and what got through
   was fixed: [CHANGELOG.md](CHANGELOG.md) (v0.8.6).
