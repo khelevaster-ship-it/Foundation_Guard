@@ -26,6 +26,7 @@ import json, os, re, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import adds as AD
 import config as C
+import ledgers as LG
 import paths as P
 import testguard as TG
 import weaken as W
@@ -561,7 +562,7 @@ def count(root, base, head, cfg=None):
                     these = these + [("possible", "an approved promise's test changed inside")]
                 found += [(k, words, e) for k, e in these]
             continue
-        for r in W.weaker(rel, ot, nt):                  # a guard file that isn't a test: the weakening finder's reasons
+        for r in LG.weaker(cfg, rel, ot, nt):            # a guard file that isn't a test: the weakening finder's reasons
             if re.search(r"=\s*(?:\[\]|\(\)|\{\}|\"\"|'')\s*$", r) and not BREAK("facts_empty_allow"):
                 continue                                 # an empty allow-list starts out empty: nothing is let through
             if re.search(r"\b(?:exception|waiver)\b", r) and not BREAK("facts_exception"):

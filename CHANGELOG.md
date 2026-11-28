@@ -3,6 +3,10 @@
 Newest first. F-numbers are rows in `APPROVED.md`. Dates are 2026. Scores are before any fix unless marked post hoc.
 
 ## Next version (not yet released): Windows CI green, a guard that fails closed, and web projects
+- **A row added to a ledger opens no box** (F567-F570; 28 Nov). List your append-only records and their kind in
+  `"ledgers"` (`"table"`, `"newest_on_top"`, `"pins"`), and an edit that only adds a row, a run on top or a new pin
+  needs no box. Count lines must move by exactly the rows added; any changed or removed line, a second row for the same
+  test, or a pin with an old name still asks (`fg/ledgers.py`).
 - **Listing the waiting yeses opens no box** (F566; 27 Nov). With `"python_variables": ["PY"]`, `"$PY" fg/ownerok.py`
   is read as a plain listing, so it no longer opens the owner's yes box; `--give` still does.
 - **The owner's kit update doesn't stall the next step** (F564, F565; 27 Nov). After the update changed 12 kit files,
