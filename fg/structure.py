@@ -30,6 +30,9 @@ must meet the limits.
   python fg/structure.py                     check (exit 1 on a failure)
   python fg/structure.py --ratchet           lower the baseline to today's sizes (only ever tightens)
   python fg/structure.py --baseline "why"    (re)write the baseline: logged with its reason in STRUCTURE_LOG.md
+  python fg/structure.py --shrink            the shrink rule's own report: owed shrinks, pay-later lines, its books
+  python fg/structure.py --shrink --add PATH "why"   list a file that sits exactly at max_file_lines (the owner's box)
+The shrink rule (fg/shrink.py, "structure" -> "shrink"): a listed piece an item changes must be smaller when it closes.
 """
 import datetime, fnmatch, json, os, re, subprocess, sys
 
@@ -213,10 +216,11 @@ def _after_block(clean, i, j, opened, tail, after, plain):
     return i + 1
 
 
-def blocks_clike(lines, path="", ext=""):
+def blocks_clike(lines, path="", ext="", spans=False):
     """[(class identity, line count, kind)] for class bodies and C++ out-of-class member definitions.
     Identity is namespace-qualified (MyHydro::Aquifer::State, not State); a template specialisation keeps its arguments
-    (std::hash<FTile>); a class in an anonymous namespace is private to its file. kind = "decl" or "method"."""
+    (std::hash<FTile>); a class in an anonymous namespace is private to its file. kind = "decl" or "method".
+    spans=True adds each block's first and last line index (the shrink rule, fg/shrink.py, reads which lines are whose)."""
     clean = _clean_for_blocks(lines, ext)
     found, i, n = [], 0, len(clean)
     plain = BRK("structure_namespace")
@@ -231,7 +235,7 @@ def blocks_clike(lines, path="", ext=""):
         ident, kind = _block_ident(m, clean[i], sc, plain)
         j, opened, tail, after = _block_end(clean, i, m.end())
         if opened:
-            found.append((ident, j - i + 1, kind))
+            found.append((ident, j - i + 1, kind) + ((i, j) if spans else ()))
         i = _after_block(clean, i, j, opened, tail, after, plain)
     return found
 
@@ -334,7 +338,8 @@ def py_block_end(lines, i, ind, ins):
     return j
 
 
-def functions_python(lines, checks=False):
+def py_defs(lines):
+    """[(name, def line, signature's last line, end)] of every Python function; end is one past its last line."""
     out, ins = [], (py_in_string(lines) if not os.environ.get("FG_BREAK", "") == "structure_fresh" else [False] * len(lines))
     for i, ln in enumerate(lines):
         m = re.match(r"^(\s*)(?:async\s+)?def\s+([A-Za-z_]\w*)", ln)
@@ -347,9 +352,24 @@ def functions_python(lines, checks=False):
                 depth += code.count("(") + code.count("[") - code.count(")") - code.count("]")
                 if depth <= 0 and code.rstrip().endswith(":"):
                     sig = k; break
-        j = py_block_end(lines, sig, len(m.group(1)), ins)
-        out.append((m.group(2), j - i) + D.tangle_python(lines, sig, j, head=i, checks=checks) + (D.tangle_python(lines, sig, j)[1],))
+        out.append((m.group(2), i, sig, py_block_end(lines, sig, len(m.group(1)), ins)))
     return out
+
+
+def functions_python(lines, checks=False):
+    return [(name, j - i) + D.tangle_python(lines, sig, j, head=i, checks=checks) + (D.tangle_python(lines, sig, j)[1],)
+            for name, i, sig, j in py_defs(lines)]
+
+
+def function_spans(lines, ext, checks=False):
+    """[(name, first line index, last line index, complexity, nesting)] of a file's functions, measured as the check does
+    (the shrink rule reads which lines belong to which function)."""
+    if ext == ".py":
+        return [(name, i, j - 1) + D.tangle_python(lines, sig, j, head=i, checks=checks)[:2] for name, i, sig, j in py_defs(lines)]
+    if ext in CLIKE:
+        found, clean = FN.functions(lines, ext)
+        return [(nm, a, b) + D.tangle_clike(clean, a, b, checks)[:2] for nm, a, b in found]
+    return []
 
 
 def gd_skip(lines, ins):
@@ -642,9 +662,16 @@ def design_check(s, base, brk):
     return bad
 
 
-def _room(s, brk):
-    """Lines an over-limit file, class or function may stand over its recorded size (room for a small fix)."""
-    return 0 if brk == "fix_room" else max(0, int(s.get("fix_room_lines", 10)))
+def _room(s, brk, piece=None):
+    """Lines an over-limit file, class or function may stand over its recorded size (room for a small fix). With the
+    shrink rule on (fg/shrink.py), a piece it covers gets only the lines its books hold for it (pay-later lines, one-line
+    fixes, an exact revert of a cut) instead of fix_room_lines."""
+    if brk == "fix_room":
+        return 0
+    books = s.get("_shrink_room")
+    if books is not None and piece in books:
+        return books[piece]
+    return max(0, int(s.get("fix_room_lines", 10)))
 
 
 def _function_check(fn, base, s, brk, bad):
@@ -654,8 +681,8 @@ def _function_check(fn, base, s, brk, bad):
             allowed = _followed(k, base.get("functions", {}), fn)
         if allowed is None:
             bad.append(f"function {k}: {n} lines (limit {s['max_function_lines']})")
-        elif n > allowed + _room(s, brk) and brk != "structure_ratchet":
-            bad.append(f"function {k}: grew to {n} lines; recorded {allowed}, may only shrink (a fix may add up to {_room(s, brk)})")
+        elif n > allowed + _room(s, brk, "function " + k) and brk != "structure_ratchet":
+            bad.append(f"function {k}: grew to {n} lines; recorded {allowed}, may only shrink (a fix may add up to {_room(s, brk, 'function ' + k)})")
 
 
 def _file_check(fl, base, s, brk, bad):
@@ -663,8 +690,8 @@ def _file_check(fl, base, s, brk, bad):
         allowed = base["files"].get(p)
         if allowed is None:
             bad.append(f"{p}: {n} lines (limit {s['max_file_lines']})")
-        elif n > allowed + _room(s, brk) and brk != "structure_ratchet":
-            bad.append(f"{p}: grew to {n} lines; its recorded size is {allowed} and it may only shrink (a fix may add up to {_room(s, brk)})")
+        elif n > allowed + _room(s, brk, "file " + p) and brk != "structure_ratchet":
+            bad.append(f"{p}: grew to {n} lines; its recorded size is {allowed} and it may only shrink (a fix may add up to {_room(s, brk, 'file ' + p)})")
 
 
 def _class_size(k, v, b, s, brk, bad):
@@ -672,7 +699,7 @@ def _class_size(k, v, b, s, brk, bad):
         return
     if b is None:
         bad.append(f"class {k}: {v['lines']} lines across {len(v['files'])} file(s) (limit {s['max_class_lines']})")
-    elif v["lines"] > b["lines"] + _room(s, brk) and brk != "structure_ratchet":
+    elif v["lines"] > b["lines"] + _room(s, brk, "class " + k) and brk != "structure_ratchet":
         bad.append(f"class {k}: grew to {v['lines']} lines; recorded {b['lines']}, may only shrink")
 
 
@@ -788,6 +815,7 @@ def check(cfg, cached=False):
     s = dict(DEFAULTS); s.update(cfg.get("structure") or {})
     brk = os.environ.get("FG_BREAK", "")
     fl, cl, fn = measure(cfg, s, cached); base = load_baseline(cfg, s); bad, warn = [], []
+    shrunk = _shrink(cfg, s, cl, bad)
     _function_check(fn, base, s, brk, bad)
     _file_check(fl, base, s, brk, bad)
     _class_check(cl, base, s, brk, bad)
@@ -795,8 +823,20 @@ def check(cfg, cached=False):
     _growth_check(cfg, fl, s, bad, warn)
     bad += design_check(s, base, brk)
     rep = [f"STRUCTURE: {len(fl)} files, {len(cl)} classes, {len(fn)} long functions found; {len(bad)} failure(s), {len(warn)} warning(s)."]
-    rep += ["  FAIL " + b for b in bad] + ["  WARN " + w for w in warn]
+    rep += ["  FAIL " + b for b in bad] + ["  WARN " + w for w in warn] + shrunk
     return not bad, "\n".join(rep)
+
+
+def _shrink(cfg, s, cl, bad):
+    """The shrink rule (fg/shrink.py), when "structure" -> "shrink" -> "on": its failures join bad, its books set each
+    covered piece's room, and its report lines (owed shrinks, pay-later lines) are returned for the summary."""
+    if not (s.get("shrink") or {}).get("on"):
+        return []
+    import shrink as SH
+    sb, books, lines = SH.run(cfg, s, cl)
+    bad += sb
+    s["_shrink_room"] = books
+    return lines
 
 
 def _was(k, recorded, now):
@@ -836,6 +876,8 @@ def write_baseline(cfg, s, fl, cl, fn, reason, ratchet):
         old = load_baseline(cfg, s)
         of, oc, ofn = _ratchet_sizes(old, of, oc, ofn, fn)
         db = _ratchet_design(old, db)
+        if not BREAK_S("ratchet_keeps_at_limit"):           # a file listed at the limit (shrink --add) stays listed there
+            of.update({p: min(fl[p], n) for p, n in old["files"].items() if p not in of and fl.get(p, 0) >= s["max_file_lines"]})
         n = lambda b: sum(len(b.get(x) or {}) for x in ("files", "classes", "functions", "tangle", "duplicates"))
         kept, was = n({"files": of, "classes": oc, "functions": ofn, **db}), n(old)
         line = (f"baseline tightened: {kept} entries kept, {was - kept} dropped (fixed, or no longer found). "
@@ -885,6 +927,9 @@ def over(fl, cl, s, fn=None):
 
 def main(argv):
     cfg = C.load(); s = dict(DEFAULTS); s.update(cfg.get("structure") or {})
+    if "--shrink" in argv:
+        import shrink as SH
+        return SH.main(cfg, s, [a for a in argv if a != "--shrink"])
     if "--baseline" in argv or "--ratchet" in argv:
         ratchet = "--ratchet" in argv
         reason = " ".join(a for a in argv if not a.startswith("--"))
